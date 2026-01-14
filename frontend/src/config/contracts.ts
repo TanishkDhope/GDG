@@ -1,0 +1,4 @@
+// Replace these with your actual deployed contract addresses
+export const NFT_CONTRACT_ADDRESS = "0x68CfbB577B2A8A50D869bFCCF3F16AEC421be99A";
+export const MARKETPLACE_ADDRESS = "0x3A301d8a10Bbc2E220dF67eD28a5737d7Ce92842";
+export const TREASURY_ADDRESS = "0x00Bd67C393E1fCb9E8265a7ED1b7F6300b185083";
