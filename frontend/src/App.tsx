@@ -11,7 +11,7 @@ import AdminPage from "./pages/AdminPage";
 import VerificationPage from "./pages/VerificationPage";
 import VotingPage from "./pages/VotingPage";
 import SuccessPage from "./pages/SuccessPage";
-
+import Test from "./components/Test";
 
 function App() {
   return (
@@ -26,6 +26,7 @@ function App() {
             <Route path="/verify" element={<VerificationPage />} />
             <Route path="/voting" element={<VotingPage />} />
             <Route path="/success" element={<SuccessPage />} />
+            <Route path="/test" element={<Test />} />
           </Routes>
       </Providers>
     </BrowserRouter>
