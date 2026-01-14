@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import ModeToggle from "@/components/ModeToggle";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useEffect } from "react";
 
@@ -38,7 +37,6 @@ export default function Navbar() {
         </div>
         <div className="flex items-center justify-center gap-5">
           <ConnectButton label="Sign In" />
-          <ModeToggle />
         </div>
       </nav>
     </>
