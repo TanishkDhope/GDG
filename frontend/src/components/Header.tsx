@@ -1,5 +1,6 @@
 "use client"
 
+import { ConnectButton } from "@rainbow-me/rainbowkit"
 import {Link} from "react-router-dom"
 import { useNavigate } from "react-router-dom"
 
@@ -58,6 +59,7 @@ export function Header({ showNav = true }: HeaderProps) {
               </button>
             </nav>
           )}
+          <ConnectButton />
         </div>
       </div>
     </header>

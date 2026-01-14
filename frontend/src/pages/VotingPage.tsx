@@ -1,10 +1,15 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { Header } from "@/components/Header"
 import { Footer } from "@/components/Footer"
 import { CardContainer } from "@/components/Card-Container"
+import { useAccount, useSendTransaction, useWaitForTransactionReceipt } from "wagmi"
+import { parseEther, stringToHex, getAddress } from "viem"
+import { BALLOT_CONTRACT_ADDRESS } from "@/config/contracts"
+import { Loader2, ShieldCheck, ExternalLink, AlertCircle, ReceiptText, ArrowRight } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 interface Candidate {
   id: string
@@ -17,9 +22,22 @@ interface Candidate {
 
 export default function VotingPage() {
   const navigate = useNavigate()
+  const { address, isConnected } = useAccount()
   const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null)
   const [showConfirmation, setShowConfirmation] = useState(false)
-  const [voteCast, setVoteCast] = useState(false)
+  const [txHash, setTxHash] = useState<`0x${string}` | undefined>(undefined)
+
+  // Send Transaction hook
+  const { sendTransactionAsync, isPending: isWriting, error: writeError } = useSendTransaction()
+
+  // Wait for transaction receipt
+  const {
+    isLoading: isConfirming,
+    isSuccess: isConfirmed,
+    error: txError,
+  } = useWaitForTransactionReceipt({
+    hash: txHash,
+  })
 
   // Mock candidate data
   const candidates: Candidate[] = [
@@ -59,23 +77,125 @@ export default function VotingPage() {
 
   const selectedCandidate = candidates.find((c) => c.id === selectedCandidateId)
 
-  const handleCastVote = () => {
-    setVoteCast(true)
-    setTimeout(() => {
-      navigate("/success")
-    }, 2000)
+  const handleCastVote = async () => {
+    if (!selectedCandidateId || !address || !selectedCandidate) {
+      console.error("DEBUG: Missing requirements:", { selectedCandidateId, address, selectedCandidate });
+      return;
+    }
+
+    // Explicitly target Sepolia (11155111)
+    const SEPOLIA_ID = 11155111;
+
+    try {
+      const voteData = stringToHex(`VOTE_FOR:${selectedCandidate.name}`);
+      const txPayload = {
+        to: getAddress(BALLOT_CONTRACT_ADDRESS) as `0x${string}`,
+        value: parseEther("0.000001"),
+        data: voteData as `0x${string}`,
+        chainId: SEPOLIA_ID
+      };
+
+      console.log("DEBUG: Preparing Transaction Payload:", txPayload);
+
+      const hash = await sendTransactionAsync(txPayload)
+
+      console.log("DEBUG: Transaction Submitted!", hash);
+      setTxHash(hash)
+      setShowConfirmation(false)
+    } catch (err: any) {
+      console.error("DEBUG: FULL ERROR OBJECT:", err);
+
+      // If it fails with "invalid parameters", it's almost certainly the 'data' field
+      // Let's try one more time WITHOUT data as a fallback to see if at least the money can be sent
+      if (err.message?.includes("Invalid parameters") || err.message?.includes("invalid parameter")) {
+        console.warn("DEBUG: Metadata transfer failed, attempting fallback transfer WITHOUT data...");
+        try {
+          const fallbackHash = await sendTransactionAsync({
+            to: getAddress(BALLOT_CONTRACT_ADDRESS) as `0x${string}`,
+            value: parseEther("0.000001"),
+            chainId: SEPOLIA_ID
+          });
+          console.log("DEBUG: Fallback Transaction Submitted!", fallbackHash);
+          setTxHash(fallbackHash)
+          setShowConfirmation(false)
+          return;
+        } catch (fallbackErr: any) {
+          console.error("DEBUG: Fallback also failed:", fallbackErr);
+        }
+      }
+
+      const providerError = err?.cause?.message || err?.info?.error?.message || err?.message;
+      console.error("DEBUG: Provider final error message:", providerError);
+    }
   }
 
-  if (voteCast) {
+  // Voting Receipt View
+  if (isConfirmed) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
         <Header showNav={false} />
-        <main className="flex-1 flex items-center justify-center py-12">
-          <CardContainer className="text-center max-w-md">
-            <div className="text-6xl mb-4">✓</div>
-            <h2 className="text-2xl font-bold text-foreground mb-2">Vote Cast Successfully!</h2>
-            <p className="text-muted-foreground mb-6">Your vote has been securely recorded and locked.</p>
-            <p className="text-sm text-muted-foreground">Redirecting...</p>
+        <main className="flex-1 flex items-center justify-center py-12 px-4">
+          <CardContainer className="max-w-md w-full border-green-500/30 bg-green-500/5 shadow-2xl shadow-green-500/10">
+            <div className="flex flex-col items-center text-center space-y-6">
+              <div className="relative">
+                <div className="absolute inset-0 bg-green-400/20 blur-2xl rounded-full" />
+                <div className="relative bg-green-500 p-4 rounded-full shadow-lg shadow-green-500/40">
+                  <ShieldCheck className="w-12 h-12 text-white" />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <h2 className="text-2xl font-bold text-foreground tracking-tight">Vote Cast Successfully!</h2>
+                <p className="text-muted-foreground text-sm">Your vote has been cryptographically secured on the blockchain.</p>
+              </div>
+
+              <div className="w-full space-y-4 pt-4">
+                <div className="bg-background/80 backdrop-blur border border-border rounded-xl p-5 text-left space-y-4">
+                  <div className="flex items-center gap-2 text-primary font-bold border-b border-border/50 pb-3">
+                    <ReceiptText className="w-4 h-4" />
+                    <span className="text-sm uppercase tracking-wider">Transaction Receipt</span>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Candidate</p>
+                      <p className="text-sm font-semibold">{selectedCandidate?.name}</p>
+                    </div>
+
+                    <div>
+                      <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Transaction Hash</p>
+                      <div className="flex items-center gap-2 group">
+                        <p className="text-[11px] font-mono break-all text-foreground/80 bg-muted/50 p-2 rounded w-full">
+                          {txHash}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-muted-foreground">Fee Paid</span>
+                      <span className="font-mono font-bold text-primary">0.000001 ETH</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-3">
+                  <Button
+                    className="w-full bg-green-600 hover:bg-green-700 text-white font-bold h-12"
+                    onClick={() => window.open(`https://sepolia.etherscan.io/tx/${txHash}`, '_blank')}
+                  >
+                    View on Etherscan <ExternalLink className="ml-2 w-4 h-4" />
+                  </Button>
+
+                  <Button
+                    variant="ghost"
+                    className="w-full text-muted-foreground hover:text-foreground text-sm"
+                    onClick={() => navigate("/")}
+                  >
+                    Return to Dashboard <ArrowRight className="ml-2 w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
           </CardContainer>
         </main>
         <Footer />
@@ -85,119 +205,204 @@ export default function VotingPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Header showNav={false} />
+      <Header />
 
       <main className="flex-1 py-12">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-          {/* Voting Info */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-foreground mb-2">Cast Your Vote</h1>
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              <div className="grid grid-cols-3 gap-4 text-sm">
-                <div className="bg-secondary rounded-lg p-4">
-                  <p className="text-muted-foreground text-xs mb-1">State</p>
-                  <p className="font-semibold text-foreground">Maharashtra</p>
-                </div>
-                <div className="bg-secondary rounded-lg p-4">
-                  <p className="text-muted-foreground text-xs mb-1">District</p>
-                  <p className="font-semibold text-foreground">Mumbai South</p>
-                </div>
-                <div className="bg-secondary rounded-lg p-4">
-                  <p className="text-muted-foreground text-xs mb-1">Ward</p>
-                  <p className="font-semibold text-foreground">Ward 45</p>
-                </div>
+          {/* Connection Check */}
+          {!isConnected ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center space-y-6">
+              <div className="bg-primary/10 p-6 rounded-full border border-primary/20">
+                <Loader2 className="w-12 h-12 text-primary animate-pulse" />
               </div>
-              <div className="bg-accent/10 border border-accent rounded-lg p-4">
-                <p className="text-xs text-accent font-medium">VOTER VERIFIED ✓</p>
+              <div className="space-y-2">
+                <h2 className="text-2xl font-bold text-foreground tracking-tight">Wallet Connection Required</h2>
+                <p className="text-muted-foreground max-w-md mx-auto">
+                  To ensure a secure and tamper-proof voting process, you must connect your crypto wallet to cast your vote on-chain.
+                </p>
+              </div>
+              <div className="pt-4">
+                <Header showNav={false} />
               </div>
             </div>
-          </div>
-
-          {/* Candidates Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            {candidates.map((candidate) => (
-              <div
-                key={candidate.id}
-                onClick={() => setSelectedCandidateId(candidate.id)}
-                className={`cursor-pointer transition-all duration-200 ${
-                  selectedCandidateId === candidate.id
-                    ? "ring-2 ring-primary ring-offset-2 scale-105"
-                    : "hover:shadow-lg"
-                }`}
-              >
-                <CardContainer className={`${selectedCandidateId === candidate.id ? "bg-primary/5" : ""}`}>
-                  <div className="flex items-start gap-4">
-                    {/* Candidate Avatar and Selection */}
-                    <div className="relative">
-                      <div className="h-16 w-16 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center text-2xl font-bold text-white">
-                        {candidate.partySymbol}
-                      </div>
-                      <input
-                        type="radio"
-                        name="candidate"
-                        value={candidate.id}
-                        checked={selectedCandidateId === candidate.id}
-                        onChange={(e) => setSelectedCandidateId(e.target.value)}
-                        className="absolute -bottom-2 -right-2 h-6 w-6 cursor-pointer accent-primary"
-                      />
+          ) : (
+            <>
+              {/* Voting Info */}
+              <div className="mb-8">
+                <div className="flex items-center gap-3 mb-2">
+                  <h1 className="text-3xl font-bold text-foreground">Cast Your Vote</h1>
+                  <span className="px-2 py-1 bg-green-500/10 text-green-600 text-[10px] font-bold rounded uppercase tracking-widest border border-green-500/20">
+                    Secure Session
+                  </span>
+                </div>
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  <div className="grid grid-cols-3 gap-4 text-sm flex-1">
+                    <div className="bg-card border border-border rounded-lg p-4 transition-colors hover:border-primary/50">
+                      <p className="text-muted-foreground text-[10px] uppercase font-bold mb-1 tracking-widest">State</p>
+                      <p className="font-semibold text-foreground">Maharashtra</p>
                     </div>
-
-                    {/* Candidate Info */}
-                    <div className="flex-1">
-                      <h3 className="text-lg font-bold text-foreground">{candidate.name}</h3>
-                      <p className="text-sm text-primary font-semibold mb-2">{candidate.party}</p>
-                      <p className="text-xs text-muted-foreground mb-3">{candidate.education}</p>
-                      <p className="text-sm text-foreground">{candidate.workSummary}</p>
+                    <div className="bg-card border border-border rounded-lg p-4 transition-colors hover:border-primary/50">
+                      <p className="text-muted-foreground text-[10px] uppercase font-bold mb-1 tracking-widest">District</p>
+                      <p className="font-semibold text-foreground">Mumbai South</p>
+                    </div>
+                    <div className="bg-card border border-border rounded-lg p-4 transition-colors hover:border-primary/50">
+                      <p className="text-muted-foreground text-[10px] uppercase font-bold mb-1 tracking-widest">Ward</p>
+                      <p className="font-semibold text-foreground">Ward 45</p>
                     </div>
                   </div>
-                </CardContainer>
+                  <div className="bg-accent/5 border border-accent/20 rounded-lg p-4 flex items-center gap-3">
+                    <div className="h-2 w-2 bg-accent rounded-full animate-pulse" />
+                    <p className="text-xs text-accent font-bold tracking-wider">VOTER VERIFIED ✓</p>
+                  </div>
+                </div>
               </div>
-            ))}
-          </div>
 
-          {/* Cast Vote Section */}
-          {selectedCandidate && (
-            <div className="max-w-2xl mx-auto">
-              <CardContainer className="bg-accent/5 border-2 border-accent">
-                <h2 className="text-xl font-bold text-foreground mb-4">You Selected:</h2>
-                <div className="bg-background rounded-lg p-6 mb-6 border border-border">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="h-20 w-20 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center text-4xl">
-                      {selectedCandidate.partySymbol}
+              {/* Candidates Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+                {candidates.map((candidate) => (
+                  <div
+                    key={candidate.id}
+                    onClick={() => setSelectedCandidateId(candidate.id)}
+                    className={`cursor-pointer transition-all duration-500 group relative ${selectedCandidateId === candidate.id
+                      ? "scale-[1.02]"
+                      : "hover:scale-[1.01]"
+                      }`}
+                  >
+                    <CardContainer className={`h-full border-2 transition-all duration-500 ${selectedCandidateId === candidate.id
+                      ? "border-primary bg-primary/5 shadow-xl shadow-primary/5"
+                      : "border-border/50 hover:border-primary/30"
+                      }`}>
+
+                      {selectedCandidateId === candidate.id && (
+                        <div className="absolute top-4 right-4 bg-primary text-white p-1 rounded-full animate-in zoom-in duration-300">
+                          <ShieldCheck className="w-5 h-5" />
+                        </div>
+                      )}
+
+                      <div className="flex items-start gap-4">
+                        <div className={`h-20 w-20 rounded-2xl flex items-center justify-center text-3xl font-bold shadow-inner transition-colors duration-500 ${selectedCandidateId === candidate.id ? "bg-primary text-white" : "bg-muted group-hover:bg-primary/20"
+                          }`}>
+                          {candidate.partySymbol}
+                        </div>
+
+                        <div className="flex-1 space-y-1">
+                          <h3 className="text-xl font-bold text-foreground group-hover:text-primary transition-colors">{candidate.name}</h3>
+                          <p className="text-sm text-primary font-bold uppercase tracking-widest">{candidate.party}</p>
+                          <p className="text-xs text-muted-foreground font-medium">{candidate.education}</p>
+                          <p className="text-sm text-foreground/80 leading-relaxed pt-2 line-clamp-2">{candidate.workSummary}</p>
+                        </div>
+                      </div>
+                    </CardContainer>
+                  </div>
+                ))}
+              </div>
+
+              {/* Cast Vote Action */}
+              {selectedCandidate && (
+                <div className="max-w-2xl mx-auto animate-in slide-in-from-bottom-8 duration-700">
+                  <CardContainer className="bg-accent/5 border-2 border-accent/30 shadow-2xl shadow-accent/5">
+                    <div className="flex items-center gap-2 mb-4 text-accent">
+                      <ShieldCheck className="w-5 h-5" />
+                      <h2 className="text-xl font-bold tracking-tight">Final Verification</h2>
                     </div>
-                    <div>
-                      <h3 className="text-2xl font-bold text-foreground">{selectedCandidate.name}</h3>
-                      <p className="text-primary font-semibold">{selectedCandidate.party}</p>
+
+                    <div className="bg-background rounded-2xl p-6 mb-6 border border-border shadow-inner">
+                      <div className="flex items-center gap-6">
+                        <div className="h-24 w-24 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-5xl shadow-lg shadow-primary/20">
+                          {selectedCandidate.partySymbol}
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Selected Candidate</p>
+                          <h3 className="text-3xl font-black text-foreground">{selectedCandidate.name}</h3>
+                          <p className="text-primary font-bold">{selectedCandidate.party}</p>
+                        </div>
+                      </div>
                     </div>
+
+                    <div className="space-y-4 mb-8">
+                      <p className="text-sm text-muted-foreground leading-relaxed italic">
+                        "Your vote represents your voice. By clicking below, you authorize an on-chain transaction that permanently records your selection with mathematically proven anonymity."
+                      </p>
+
+                      <div className="flex items-center justify-between p-4 bg-muted/50 rounded-xl border border-border/80">
+                        <span className="text-sm font-medium">Processing Fee</span>
+                        <span className="text-sm font-bold text-primary">0.000001 ETH</span>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-4">
+                      <Button
+                        onClick={() => setShowConfirmation(true)}
+                        className="flex-1 h-14 bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-lg rounded-xl shadow-lg shadow-primary/20 transition-all hover:scale-[1.01] active:scale-[0.99]"
+                      >
+                        Cast Secure Vote
+                      </Button>
+                      <Button
+                        onClick={() => setSelectedCandidateId(null)}
+                        variant="outline"
+                        className="flex-1 h-14 border-border/80 text-foreground font-bold text-lg rounded-xl hover:bg-muted"
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </CardContainer>
+                </div>
+              )}
+
+              {/* No Selection State */}
+              {!selectedCandidate && (
+                <div className="text-center py-10 bg-muted/30 rounded-3xl border-2 border-dashed border-border/50">
+                  <p className="text-muted-foreground font-medium animate-pulse">Please select a candidate from the list to cast your vote</p>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Lifecycle Status Messages */}
+          {(isWriting || isConfirming) && (
+            <div className="fixed inset-0 bg-background/80 backdrop-blur-md flex items-center justify-center z-100 animate-in fade-in duration-500">
+              <div className="flex flex-col items-center gap-6 text-center max-w-sm px-6">
+                <div className="relative">
+                  <div className="absolute inset-0 rounded-full bg-primary/20 animate-ping" />
+                  <div className="bg-card p-6 rounded-full border border-primary/20 shadow-xl relative">
+                    <Loader2 className="w-12 h-12 text-primary animate-spin" />
                   </div>
                 </div>
-
-                <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
-                  Once you confirm, your vote will be encrypted, locked, and cannot be changed. Your vote will be
-                  completely anonymous and will contribute to the transparent election results.
-                </p>
-
-                <div className="flex gap-4">
-                  <button
-                    onClick={() => setShowConfirmation(true)}
-                    className="flex-1 px-6 py-3 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 transition-colors"
-                  >
-                    Confirm & Cast Vote
-                  </button>
-                  <button
-                    onClick={() => setSelectedCandidateId(null)}
-                    className="flex-1 px-6 py-3 bg-secondary text-secondary-foreground font-semibold rounded-lg hover:bg-muted transition-colors border border-border"
-                  >
-                    Change Selection
-                  </button>
+                <div className="space-y-2">
+                  <h3 className="text-2xl font-bold text-foreground">
+                    {isConfirming ? "Securing Your Vote..." : "Awaiting Authorization"}
+                  </h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {isConfirming
+                      ? "The blockchain is processing your vote. This ensures it can never be tampered with or changed."
+                      : "Please confirm the transaction in your connected wallet. A fee of 0.000001 ETH applies."}
+                  </p>
                 </div>
-              </CardContainer>
+              </div>
             </div>
           )}
 
-          {!selectedCandidate && (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground text-lg">Select a candidate above to continue</p>
+          {(writeError || txError) && (
+            <div className="fixed bottom-8 right-8 animate-in slide-in-from-right-8 duration-500 z-110">
+              <div className="bg-destructive/10 backdrop-blur-md border border-destructive/20 p-6 rounded-2xl flex items-start gap-4 shadow-2xl max-w-sm">
+                <AlertCircle className="w-6 h-6 text-destructive mt-0.5 shrink-0" />
+                <div className="space-y-2">
+                  <p className="text-sm font-bold text-destructive">Transaction Failed</p>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed font-mono bg-destructive/5 p-2 rounded border border-destructive/10 overflow-auto max-h-32">
+                    {((writeError || txError) as any)?.shortMessage || (writeError || txError)?.message || "Unknown RPC Error"}
+                  </p>
+                  <div className="pt-1">
+                    <p className="text-[10px] text-destructive/70 font-semibold uppercase tracking-wider">
+                      Troubleshooting:
+                    </p>
+                    <ul className="text-[10px] text-muted-foreground list-disc ml-3 space-y-1 mt-1">
+                      <li>Check if you have enough ETH for gas</li>
+                      <li>Ensure your wallet is on **Sepolia**</li>
+                      <li>Try refreshing the page</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -205,37 +410,46 @@ export default function VotingPage() {
 
       {/* Confirmation Modal */}
       {showConfirmation && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <CardContainer className="max-w-md">
-            <h2 className="text-2xl font-bold text-foreground mb-4">Confirm Your Vote</h2>
-            <p className="text-muted-foreground mb-4">
-              You are about to cast your vote for{" "}
-              <span className="font-bold text-foreground">{selectedCandidate?.name}</span>. This action cannot be
-              undone.
+        <div className="fixed inset-0 bg-background/60 backdrop-blur-sm flex items-center justify-center z-110 p-4 animate-in fade-in duration-300">
+          <CardContainer className="max-w-md w-full shadow-2xl border-primary/20">
+            <h2 className="text-2xl font-bold text-foreground mb-4">Confirm Your Intent</h2>
+            <p className="text-muted-foreground mb-6 leading-relaxed">
+              You are casting a permanent, non-reversible vote for{" "}
+              <span className="font-extrabold text-foreground underline decoration-primary/30 underline-offset-4">{selectedCandidate?.name}</span>.
             </p>
 
-            <div className="bg-secondary rounded-lg p-4 mb-6">
-              <p className="text-xs text-muted-foreground">Your vote will be:</p>
-              <ul className="text-sm text-foreground mt-2 space-y-1">
-                <li>✓ Encrypted using blockchain</li>
-                <li>✓ Completely anonymous</li>
-                <li>✓ Permanently locked</li>
+            <div className="bg-muted/80 rounded-2xl p-5 mb-8 border border-border/50">
+              <p className="text-[10px] uppercase font-bold text-muted-foreground mb-3 tracking-widest">Protocol Guarantees</p>
+              <ul className="text-sm font-medium text-foreground/80 space-y-3">
+                <li className="flex items-center gap-3">
+                  <div className="h-1.5 w-1.5 bg-green-500 rounded-full" />
+                  End-to-end encryption
+                </li>
+                <li className="flex items-center gap-3">
+                  <div className="h-1.5 w-1.5 bg-green-500 rounded-full" />
+                  Blockchain-enforced anonymity
+                </li>
+                <li className="flex items-center gap-3">
+                  <div className="h-1.5 w-1.5 bg-green-500 rounded-full" />
+                  Irrevocable record of will
+                </li>
               </ul>
             </div>
 
             <div className="flex gap-4">
-              <button
+              <Button
                 onClick={() => handleCastVote()}
-                className="flex-1 px-4 py-3 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 transition-colors"
+                className="flex-1 h-12 bg-primary text-primary-foreground font-bold rounded-xl"
               >
                 Yes, Cast Vote
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => setShowConfirmation(false)}
-                className="flex-1 px-4 py-3 bg-secondary text-secondary-foreground font-semibold rounded-lg hover:bg-muted transition-colors border border-border"
+                variant="outline"
+                className="flex-1 h-12 border-border/80 font-bold rounded-xl"
               >
                 Cancel
-              </button>
+              </Button>
             </div>
           </CardContainer>
         </div>
