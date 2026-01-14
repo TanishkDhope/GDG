@@ -24,6 +24,7 @@ const BallotScanner = () => {
     // Results
     const [ipfsHash, setIpfsHash] = useState<string | null>(null);
     const [computedBallotHash, setComputedBallotHash] = useState<string | null>(null);
+    const [batchHash, setBatchHash] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -32,9 +33,6 @@ const BallotScanner = () => {
     useEffect(() => {
         if (data && data.name && data.srNo) {
             try {
-                // Hash = keccak256(name + srNo)
-                // We combine them as a string first.
-                // Note: Ensure consistency on backend (e.g. "Name1" vs "Name" + "1")
                 const combined = `${data.name}${data.srNo}`;
                 const hash = keccak256(toHex(combined));
                 setComputedBallotHash(hash);
@@ -45,6 +43,22 @@ const BallotScanner = () => {
             setComputedBallotHash(null);
         }
     }, [data?.name, data?.srNo]);
+
+    // Calculate Batch Hash whenever batchData changes
+    useEffect(() => {
+        if (batchData && batchData.length > 0) {
+            try {
+                // Hash of the entire JSON array
+                const jsonStr = JSON.stringify(batchData);
+                const hash = keccak256(toHex(jsonStr));
+                setBatchHash(hash);
+            } catch (e) {
+                console.error("Batch hashing error", e);
+            }
+        } else {
+            setBatchHash(null);
+        }
+    }, [batchData]);
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const selectedFile = event.target.files?.[0];
@@ -70,6 +84,9 @@ const BallotScanner = () => {
 
             const extracted = await extractBallotData(file);
             setData(extracted);
+            // Ensure batchData has the newly scanned item
+            setBatchData([extracted]);
+            setCurrentIndex(0);
         } catch (err: any) {
             console.error("Scan error:", err);
             setError(err.message || "Failed to scan ballot.");
@@ -143,14 +160,22 @@ const BallotScanner = () => {
 
     const handleFieldChange = (field: keyof BallotData, value: any) => {
         if (!data) return;
-        setData({
+        const updatedData = {
             ...data,
             [field]: value
-        });
+        };
+        setData(updatedData);
+
+        // Sync back to batchData if we are in batch mode (or even single item batch)
+        if (batchData.length > 0) {
+            const updatedBatch = [...batchData];
+            updatedBatch[currentIndex] = updatedData;
+            setBatchData(updatedBatch);
+        }
     };
 
     const handleUpload = async () => {
-        if (!data) return;
+        if (batchData.length === 0 && !data) return;
         if (!electionId) {
             setError("Please enter an Election ID");
             return;
@@ -158,10 +183,21 @@ const BallotScanner = () => {
 
         try {
             setIsUploading(true);
-            // Upload the FULL extracted data to IPFS
-            const ipfsUri = await uploadJSONToIPFS({ ...data, electionId });
+
+            // Prepare the full batch to upload
+            const uploadData = batchData.length > 0 ? batchData : [data!];
+
+            // Add electionId to each item if not already present or to ensure consistency
+            const finalBatch = uploadData.map(item => ({
+                ...item,
+                electionId
+            }));
+
+            // Upload the WHOLE array to IPFS
+            const ipfsUri = await uploadJSONToIPFS(finalBatch);
             setIpfsHash(ipfsUri);
         } catch (err: any) {
+            console.error("Upload error:", err);
             setError(err.message || "Failed to upload to IPFS.");
         } finally {
             setIsUploading(false);
@@ -414,8 +450,9 @@ const BallotScanner = () => {
                                 </div>
 
                                 <div className="space-y-1">
-                                    <p className="text-xs font-bold uppercase text-muted-foreground">Ballot Hash (bytes32)</p>
-                                    <p className="font-mono bg-background p-2 rounded text-xs text-foreground">{computedBallotHash}</p>
+                                    <p className="text-xs font-bold uppercase text-muted-foreground">Batch Hash (bytes32)</p>
+                                    <p className="font-mono bg-background p-2 rounded text-xs text-foreground">{batchHash}</p>
+                                    <p className="text-[10px] text-muted-foreground italic">Keccak256 of the whole JSON array</p>
                                 </div>
 
                                 <div className="space-y-1">
