@@ -9,7 +9,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import Market from "./components/Market";
 import Vault from "./components/Vault";
 import AIGenerator from "./components/AIGenerator";
-
+import Test from "./components/Test";
 
 function App() {
   return (
@@ -28,6 +28,7 @@ function App() {
             <Route path="/market" element={<Market />} />
             <Route path="/vault" element={<Vault />} />
             <Route path="/studio" element={<AIGenerator />} />
+            <Route path="/test" element={<Test />} />
           </Routes>
 
         </ThemeProvider>
