@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom"
-import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
-import { CardContainer } from "@/components/card-container"
+import { Header } from "@/components/Header"
+import { Footer } from "@/components/Footer"
+import { CardContainer } from "@/components/Card-Container"
 
 export default function SuccessPage() {
   return (

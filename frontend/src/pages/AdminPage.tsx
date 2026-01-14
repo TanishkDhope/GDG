@@ -1,9 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
-import { CardContainer } from "@/components/card-container"
+import { Footer } from "@/components/Footer"
+import { Header } from "@/components/Header"
+import { CardContainer } from "@/components/Card-Container"
 
 interface Complaint {
   id: string
