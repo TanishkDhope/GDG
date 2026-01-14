@@ -1,36 +1,32 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Navbar from "@/components/Navbar";
-import ProductLandingPage from "@/pages/ProductLandingPage";
 // import SignatureCard from "@/components/SignatureCard";
 // import { SIGNATURES } from "@/constants/signatures";
 // import PaginationComponent from "@/components/PaginationComponent";
 import Providers from "@/components/Providers";
-import { ThemeProvider } from "@/components/theme-provider"
-import Market from "./components/Market";
-import Vault from "./components/Vault";
-import AIGenerator from "./components/AIGenerator";
+import LandingPage from "@/pages/LandingPage";
+import CandidatesPage from "./pages/CandidatesPage";
+import ResultsPage from "./pages/ResultsPage";
+import HelpPage from "./pages/HelpPage";
+import AdminPage from "./pages/AdminPage";
+import VerificationPage from "./pages/VerificationPage";
+import VotingPage from "./pages/VotingPage";
+import SuccessPage from "./pages/SuccessPage";
 
 
 function App() {
   return (
     <BrowserRouter>
       <Providers>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-
-
           <Routes>
-            <Route path="/" element={<ProductLandingPage />} />
-            <Route path="/market" element={<Market />} />
-            <Route path="/vault" element={<Vault />} />
-            <Route path="/studio" element={<AIGenerator />} />
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/candidates" element={<CandidatesPage />} />
+            <Route path="/results" element={<ResultsPage />} />
+            <Route path="/help" element={<HelpPage />} />
+            <Route path="/admin" element={<AdminPage />} />
+            <Route path="/verify" element={<VerificationPage />} />
+            <Route path="/voting" element={<VotingPage />} />
+            <Route path="/success" element={<SuccessPage />} />
           </Routes>
-
-        </ThemeProvider>
       </Providers>
     </BrowserRouter>
   );
