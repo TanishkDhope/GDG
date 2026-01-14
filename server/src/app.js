@@ -17,7 +17,7 @@ app.use(cors({
 
 app.use(express.json({ limit:"16kb" })) 
 app.use(express.urlencoded({ extended:true, limit:"16kb" })) 
-app.use(express.static("public")) 
+app.use("/images", express.static("public/images"));
 app.use(cookieParser()) 
 
 console.log("✅ app.js loaded");
