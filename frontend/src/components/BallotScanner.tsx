@@ -252,7 +252,7 @@ const BallotScanner = () => {
                                         </label>
                                     </div>
                                     <textarea
-                                        className="w-full h-64 p-4 rounded-xl border border-input bg-background font-mono text-xs resize-none focus:outline-none focus:ring-2 focus:ring-primary/20"
+                                        className="w-full h-64 p-4 rounded-xl border border-border bg-card font-mono text-xs resize-none focus:outline-none focus:ring-2 focus:ring-primary/50"
                                         placeholder={`{
   "srNo": "1",
   "name": "John Doe",
@@ -267,7 +267,7 @@ const BallotScanner = () => {
                                     <Button
                                         onClick={handleJsonImport}
                                         disabled={!jsonText}
-                                        className="w-full font-semibold"
+                                        className="w-full font-semibold bg-secondary text-secondary-foreground hover:bg-muted border border-border"
                                         variant="secondary"
                                     >
                                         Import JSON Data
@@ -277,7 +277,7 @@ const BallotScanner = () => {
                         )}
 
                         {error && (
-                            <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-600 rounded-xl text-sm animate-in shake-in">
+                            <div className="p-4 bg-destructive/10 border border-destructive/20 text-destructive rounded-xl text-sm animate-in">
                                 {error}
                             </div>
                         )}
@@ -296,9 +296,9 @@ const BallotScanner = () => {
                         </div>
 
                         {data ? (
-                            <div className="bg-card border rounded-xl p-6 shadow-sm space-y-4 animate-in fade-in slide-in-from-bottom-4">
+                            <div className="bg-card border border-border rounded-xl p-6 shadow-sm space-y-4 animate-in fade-in slide-in-from-bottom-4">
                                 <div className="flex justify-between items-center mb-2">
-                                    <h3 className="font-semibold text-lg flex items-center gap-2">
+                                    <h3 className="font-semibold text-lg flex items-center gap-2 text-foreground">
                                         <CheckCircle className="h-5 w-5 text-green-500" />
                                         Review Extracted Data
                                     </h3>
@@ -351,42 +351,42 @@ const BallotScanner = () => {
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-4">
-                                        <div className="flex items-center gap-2 border p-3 rounded">
+                                        <div className="flex items-center gap-2 border border-border p-3 rounded bg-card">
                                             <input
                                                 type="checkbox"
                                                 checked={data.isSigned}
                                                 onChange={(e) => handleFieldChange('isSigned', e.target.checked)}
                                                 className="h-4 w-4 accent-primary"
                                             />
-                                            <span className="text-sm">Signed?</span>
+                                            <span className="text-sm text-foreground">Signed?</span>
                                         </div>
-                                        <div className="flex items-center gap-2 border p-3 rounded">
+                                        <div className="flex items-center gap-2 border border-border p-3 rounded bg-card">
                                             <input
                                                 type="checkbox"
                                                 checked={data.isValid}
                                                 onChange={(e) => handleFieldChange('isValid', e.target.checked)}
                                                 className="h-4 w-4 accent-primary"
                                             />
-                                            <span className="text-sm">Valid?</span>
+                                            <span className="text-sm text-foreground">Valid?</span>
                                         </div>
                                     </div>
 
-                                    <div className="p-3 bg-muted rounded text-xs font-mono">
+                                    <div className="p-3 bg-muted rounded text-xs font-mono text-foreground">
                                         Confidence: {(data.confidence * 100).toFixed(1)}% <br />
                                         Notes: {data.notes || 'None'}
                                     </div>
 
                                     {computedBallotHash && (
-                                        <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded text-xs break-all">
-                                            <span className="font-semibold text-blue-600 block mb-1">Generated Ballot Hash (bytes32):</span>
-                                            <span className="font-mono">{computedBallotHash}</span>
+                                        <div className="p-3 bg-primary/10 border border-primary/20 rounded text-xs break-all">
+                                            <span className="font-semibold text-primary block mb-1">Generated Ballot Hash (bytes32):</span>
+                                            <span className="font-mono text-foreground">{computedBallotHash}</span>
                                             <p className="text-[10px] text-muted-foreground mt-1">Keccak256(name + srNo)</p>
                                         </div>
                                     )}
                                 </div>
 
                                 <Button
-                                    className="w-full bg-green-600 hover:bg-green-700 text-white"
+                                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-semibold"
                                     onClick={handleUpload}
                                     disabled={isUploading}
                                 >
@@ -399,35 +399,35 @@ const BallotScanner = () => {
                                 </Button>
                             </div>
                         ) : (
-                            <div className="h-full flex items-center justify-center text-muted-foreground text-sm border-2 border-dashed rounded-xl">
+                            <div className="h-full flex items-center justify-center text-muted-foreground text-sm border-2 border-dashed border-border rounded-xl p-8 bg-card">
                                 Scan a document to verify data here
                             </div>
                         )}
 
                         {ipfsHash && (
-                            <div className="bg-green-500/10 border border-green-500/20 text-green-700 p-4 rounded-xl break-all space-y-4">
-                                <h3 className="font-semibold">Ready for Blockchain Transaction</h3>
+                            <div className="bg-primary/10 border border-primary/20 text-foreground p-4 rounded-xl break-all space-y-4">
+                                <h3 className="font-semibold text-lg text-primary">Ready for Blockchain Transaction</h3>
 
                                 <div className="space-y-1">
-                                    <p className="text-xs font-bold uppercase opacity-70">Election ID (uint256)</p>
-                                    <p className="font-mono bg-white/50 p-2 rounded">{electionId}</p>
+                                    <p className="text-xs font-bold uppercase text-muted-foreground">Election ID (uint256)</p>
+                                    <p className="font-mono bg-background p-2 rounded text-foreground">{electionId}</p>
                                 </div>
 
                                 <div className="space-y-1">
-                                    <p className="text-xs font-bold uppercase opacity-70">Ballot Hash (bytes32)</p>
-                                    <p className="font-mono bg-white/50 p-2 rounded text-xs">{computedBallotHash}</p>
+                                    <p className="text-xs font-bold uppercase text-muted-foreground">Ballot Hash (bytes32)</p>
+                                    <p className="font-mono bg-background p-2 rounded text-xs text-foreground">{computedBallotHash}</p>
                                 </div>
 
                                 <div className="space-y-1">
-                                    <p className="text-xs font-bold uppercase opacity-70">IPFS Hash (string)</p>
-                                    <p className="font-mono bg-white/50 p-2 rounded text-xs">{ipfsHash}</p>
+                                    <p className="text-xs font-bold uppercase text-muted-foreground">IPFS Hash (string)</p>
+                                    <p className="font-mono bg-background p-2 rounded text-xs text-foreground">{ipfsHash}</p>
                                 </div>
 
                                 <a
                                     href={ipfsHash.replace('ipfs://', 'https://gateway.pinata.cloud/ipfs/')}
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="text-xs underline block mt-2 text-right"
+                                    className="text-xs text-primary underline block mt-2 text-right hover:text-primary/80"
                                 >
                                     View Metadata on Gateway
                                 </a>
@@ -436,8 +436,7 @@ const BallotScanner = () => {
                     </div>
                 </div>
             </div>
-        </div>
-    );
-};
+        </div>)
+}
 
-export default BallotScanner;
+export default BallotScanner
