@@ -1,8 +1,5 @@
 import Candidate from "../models/candidate.model.js";
 
-/**
- * Create single candidate
- */
 export const createCandidate = async (req, res) => {
   try {
     const candidate = await Candidate.create(req.body);
@@ -18,9 +15,6 @@ export const createCandidate = async (req, res) => {
   }
 };
 
-/**
- * Bulk insert candidates (your JSON list)
- */
 export const bulkInsertCandidates = async (req, res) => {
   try {
     const candidates = await Candidate.insertMany(req.body);
@@ -37,9 +31,6 @@ export const bulkInsertCandidates = async (req, res) => {
   }
 };
 
-/**
- * Get all candidates
- */
 export const getAllCandidates = async (req, res) => {
   try {
     const candidates = await Candidate.find().sort({ srNo: 1 });

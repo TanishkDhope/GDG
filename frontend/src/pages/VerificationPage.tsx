@@ -8,15 +8,20 @@ import { Footer } from "@/components/Footer"
 import { StepIndicator } from "@/components/Step-Indicator"
 import { CardContainer } from "@/components/Card-Container"
 import { Header } from "@/components/Header"
+import axios from "axios"
+
 type VerificationStep = "voter-id" | "face" | "otp"
 
 export default function VerificationPage() {
   const navigate = useNavigate()
   const [currentStep, setCurrentStep] = useState<VerificationStep>("voter-id")
   const [voterId, setVoterId] = useState("")
+  const [fullName, setFullName] = useState("")
+  const [dateOfBirth, setDateOfBirth] = useState("")
   const [faceImage, setFaceImage] = useState<string | null>(null)
   const [otp, setOtp] = useState("")
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const steps = ["Voter ID", "Face Verification", "OTP Verification"]
   const stepIndex = steps.findIndex((step) => {
@@ -26,43 +31,95 @@ export default function VerificationPage() {
     return false
   })
 
-  const handleVoterIdSubmit = (e: React.FormEvent) => {
+  const handleVoterIdSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setError(null)
+    
     if (!voterId.trim()) {
-      alert("Please enter your Voter ID")
+      setError("Please enter your Voter ID")
       return
     }
+    if (!fullName.trim()) {
+      setError("Please enter your full name")
+      return
+    }
+    if (!dateOfBirth) {
+      setError("Please enter your date of birth")
+      return
+    }
+    
     setLoading(true)
-    setTimeout(() => {
+    try {
+      const response = await axios.post(`http://localhost:8000/api/v1/voters/verify`, {
+        voterID: voterId,
+        fullName: fullName,
+        dateOfBirth: dateOfBirth
+      })
+      
+      if (response.data.success) {
+        alert("Voter ID verified successfully!")
+        setCurrentStep("face")
+      }
+    } catch (err: any) {
+      alert("Voter ID verification failed.")
+      setError(err.response?.data?.message || "Verification failed. Please check your details and try again.")
+    } finally {
       setLoading(false)
-      setCurrentStep("face")
-    }, 800)
+    }
   }
 
-  const handleFaceVerification = (e: React.FormEvent) => {
+  const handleFaceVerification = async (e: React.FormEvent) => {
     e.preventDefault()
+    setError(null)
+    
     if (!faceImage) {
-      alert("Please upload a face image")
+      setError("Please upload a face image")
       return
     }
+    
     setLoading(true)
-    setTimeout(() => {
+    try {
+      // Send OTP to the voter's registered phone number
+      const response = await axios.post(`http://localhost:8000/api/v1/voters/send-otp`, {
+        voterID: voterId
+      })
+      
+      if (response.data.success) {
+        alert("OTP sent to your registered mobile number!")
+        setCurrentStep("otp")
+      }
+    } catch (err: any) {
+      alert("Failed to send OTP.")
+      setError(err.response?.data?.message || "Failed to send OTP. Please try again.")
+    } finally {
       setLoading(false)
-      setCurrentStep("otp")
-    }, 800)
+    }
   }
 
-  const handleOtpSubmit = (e: React.FormEvent) => {
+  const handleOtpSubmit = async (e: React.FormEvent) => {
+    
     e.preventDefault()
     if (!otp.trim() || otp.length !== 6) {
       alert("Please enter a valid 6-digit OTP")
       return
     }
     setLoading(true)
-    setTimeout(() => {
+    try {
+      const response = await axios.post(`http://localhost:8000/api/v1/voters/verify-otp`, {
+        voterID: voterId,
+        otp: otp
+      })
+      console.log(response.data)
+      if (response.data.success) {
+        alert("OTP verified successfully!")
+        navigate("/voting")
+      }
+    } catch (err: any) {
+      alert("OTP verification failed.")
+      setError(err.response?.data?.message || "Verification failed. Please check your OTP and try again.")
+    } finally {
       setLoading(false)
-      navigate("/voting")
-    }, 800)
+    }
   }
 
   return (
@@ -75,8 +132,14 @@ export default function VerificationPage() {
 
           {currentStep === "voter-id" && (
             <CardContainer className="mt-8">
-              <h2 className="text-2xl font-bold text-foreground mb-6">Enter Your Voter ID</h2>
+              <h2 className="text-2xl font-bold text-foreground mb-6">Verify Your Identity</h2>
               <form onSubmit={handleVoterIdSubmit} className="space-y-6">
+                {error && (
+                  <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-sm text-red-600">{error}</p>
+                  </div>
+                )}
+                
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-2">Voter ID Number</label>
                   <input
@@ -92,6 +155,33 @@ export default function VerificationPage() {
                   </p>
                 </div>
 
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">Full Name</label>
+                  <input
+                    type="text"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="Enter your full name as per voter ID"
+                    className="w-full px-4 py-3 border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Enter your name exactly as it appears on your voter ID card.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">Date of Birth</label>
+                  <input
+                    type="date"
+                    value={dateOfBirth}
+                    onChange={(e) => setDateOfBirth(e.target.value)}
+                    className="w-full px-4 py-3 border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Enter your date of birth as registered in the voter database.
+                  </p>
+                </div>
+
                 <button
                   type="submit"
                   disabled={loading}
@@ -100,13 +190,19 @@ export default function VerificationPage() {
                   {loading ? "Verifying..." : "Continue to Face Verification"}
                 </button>
               </form>
-            </CardContainer>
+            </CardContainer>  
           )}
 
           {currentStep === "face" && (
             <CardContainer className="mt-8">
               <h2 className="text-2xl font-bold text-foreground mb-6">Face Verification</h2>
               <form onSubmit={handleFaceVerification} className="space-y-6">
+                {error && (
+                  <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-sm text-red-600">{error}</p>
+                  </div>
+                )}
+                
                 <div>
                   <p className="text-sm text-muted-foreground mb-4">
                     Please upload a clear photo of your face. This helps us verify your identity securely. Your image is
@@ -164,6 +260,12 @@ export default function VerificationPage() {
             <CardContainer className="mt-8">
               <h2 className="text-2xl font-bold text-foreground mb-6">Mobile OTP Verification</h2>
               <form onSubmit={handleOtpSubmit} className="space-y-6">
+                {error && (
+                  <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-sm text-red-600">{error}</p>
+                  </div>
+                )}
+                
                 <div>
                   <p className="text-sm text-muted-foreground mb-4">
                     A 6-digit OTP has been sent to your registered mobile number. Please enter it below.
