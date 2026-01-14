@@ -1,8 +1,11 @@
 import { Link } from "react-router-dom";
 import ModeToggle from "@/components/ModeToggle";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { useEffect } from "react";
+
 
 export default function Navbar() {
+     
   return (
     <>
       <nav className="flex items-center justify-between p-7 bg-background/80 backdrop-blur-sm text-foreground border-b border-border font-geist-sans fixed top-0 w-full z-50">
