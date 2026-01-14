@@ -5,10 +5,11 @@ import { useNavigate } from "react-router-dom"
 import { Header } from "@/components/Header"
 import { Footer } from "@/components/Footer"
 import { CardContainer } from "@/components/Card-Container"
-import { useAccount, useSendTransaction, useWaitForTransactionReceipt } from "wagmi"
-import { parseEther, stringToHex, getAddress } from "viem"
+import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi"
+import { parseEther, keccak256, toHex, getAddress } from "viem"
 import { BALLOT_CONTRACT_ADDRESS } from "@/config/contracts"
-import { Loader2, ShieldCheck, ExternalLink, AlertCircle, ReceiptText, ArrowRight } from "lucide-react"
+import { BALLOT_ABI } from "@/abi/ballot"
+import { Loader2, ShieldCheck, ExternalLink, AlertCircle, ReceiptText, ArrowRight, TrendingUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 interface Candidate {
@@ -22,13 +23,13 @@ interface Candidate {
 
 export default function VotingPage() {
   const navigate = useNavigate()
-  const { address, isConnected } = useAccount()
+  const { address, isConnected, chainId } = useAccount()
   const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null)
   const [showConfirmation, setShowConfirmation] = useState(false)
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>(undefined)
 
-  // Send Transaction hook
-  const { sendTransactionAsync, isPending: isWriting, error: writeError } = useSendTransaction()
+  // Contract Write hook
+  const { writeContractAsync, isPending: isWriting, error: writeError } = useWriteContract()
 
   // Wait for transaction receipt
   const {
@@ -83,47 +84,23 @@ export default function VotingPage() {
       return;
     }
 
-    // Explicitly target Sepolia (11155111)
-    const SEPOLIA_ID = 11155111;
-
     try {
-      const voteData = stringToHex(`VOTE_FOR:${selectedCandidate.name}`);
-      const txPayload = {
-        to: getAddress(BALLOT_CONTRACT_ADDRESS) as `0x${string}`,
+      // Use keccak256 for a random-looking token
+      const token = keccak256(toHex(`TOKEN_${address}_${Date.now()}`));
+
+      const hash = await writeContractAsync({
+        address: getAddress(BALLOT_CONTRACT_ADDRESS),
+        abi: BALLOT_ABI,
+        functionName: 'vote',
+        args: [token, BigInt(selectedCandidateId)],
         value: parseEther("0.000001"),
-        data: voteData as `0x${string}`,
-        chainId: SEPOLIA_ID
-      };
+      });
 
-      console.log("DEBUG: Preparing Transaction Payload:", txPayload);
-
-      const hash = await sendTransactionAsync(txPayload)
-
-      console.log("DEBUG: Transaction Submitted!", hash);
+      console.log("DEBUG: Contract Vote Submitted!", hash);
       setTxHash(hash)
       setShowConfirmation(false)
     } catch (err: any) {
-      console.error("DEBUG: FULL ERROR OBJECT:", err);
-
-      // If it fails with "invalid parameters", it's almost certainly the 'data' field
-      // Let's try one more time WITHOUT data as a fallback to see if at least the money can be sent
-      if (err.message?.includes("Invalid parameters") || err.message?.includes("invalid parameter")) {
-        console.warn("DEBUG: Metadata transfer failed, attempting fallback transfer WITHOUT data...");
-        try {
-          const fallbackHash = await sendTransactionAsync({
-            to: getAddress(BALLOT_CONTRACT_ADDRESS) as `0x${string}`,
-            value: parseEther("0.000001"),
-            chainId: SEPOLIA_ID
-          });
-          console.log("DEBUG: Fallback Transaction Submitted!", fallbackHash);
-          setTxHash(fallbackHash)
-          setShowConfirmation(false)
-          return;
-        } catch (fallbackErr: any) {
-          console.error("DEBUG: Fallback also failed:", fallbackErr);
-        }
-      }
-
+      console.error("DEBUG: Contract Vote Error:", err);
       const providerError = err?.cause?.message || err?.info?.error?.message || err?.message;
       console.error("DEBUG: Provider final error message:", providerError);
     }
@@ -180,18 +157,39 @@ export default function VotingPage() {
 
                 <div className="flex flex-col gap-3">
                   <Button
-                    className="w-full bg-green-600 hover:bg-green-700 text-white font-bold h-12"
-                    onClick={() => window.open(`https://sepolia.etherscan.io/tx/${txHash}`, '_blank')}
+                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-black h-12 shadow-lg shadow-primary/20"
+                    onClick={() => navigate("/results")}
                   >
-                    View on Etherscan <ExternalLink className="ml-2 w-4 h-4" />
+                    View Live Dashboard <TrendingUp className="ml-2 w-4 h-4" />
                   </Button>
+
+                  {chainId === 11155111 ? (
+                    <Button
+                      variant="outline"
+                      className="w-full border-[#2563eb]/30 text-[#2563eb] font-bold h-10 text-xs"
+                      onClick={() => window.open(`https://sepolia.etherscan.io/tx/${txHash}`, '_blank')}
+                    >
+                      View on Etherscan <ExternalLink className="ml-2 w-3 h-3" />
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      className="w-full border-border/80 text-muted-foreground font-bold h-10 text-xs"
+                      onClick={() => {
+                        navigator.clipboard.writeText(txHash || "");
+                        alert("Transaction Hash Copied!");
+                      }}
+                    >
+                      Copy Local Tx Hash
+                    </Button>
+                  )}
 
                   <Button
                     variant="ghost"
-                    className="w-full text-muted-foreground hover:text-foreground text-sm"
+                    className="w-full text-muted-foreground hover:text-foreground text-sm font-bold"
                     onClick={() => navigate("/")}
                   >
-                    Return to Dashboard <ArrowRight className="ml-2 w-4 h-4" />
+                    Return to Home <ArrowRight className="ml-2 w-4 h-4" />
                   </Button>
                 </div>
               </div>
@@ -397,7 +395,7 @@ export default function VotingPage() {
                     </p>
                     <ul className="text-[10px] text-muted-foreground list-disc ml-3 space-y-1 mt-1">
                       <li>Check if you have enough ETH for gas</li>
-                      <li>Ensure your wallet is on **Sepolia**</li>
+                      <li>Ensure your wallet is on **Localhost (Anvil)**</li>
                       <li>Try refreshing the page</li>
                     </ul>
                   </div>
