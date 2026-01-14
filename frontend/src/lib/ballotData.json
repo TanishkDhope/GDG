@@ -1,0 +1,92 @@
+[
+    {
+        "srNo": "1",
+        "name": "RAJNATH SINGH राजनाथ सिंह",
+        "icon": "Not specified",
+        "party": "Not specified",
+        "isSigned": false,
+        "isValid": true,
+        "hash": "hash(1RAJNATH SINGH राजनाथ सिंह)"
+    },
+    {
+        "srNo": "2",
+        "name": "NAKUL DUBEY नकुल दूबे",
+        "icon": "Not specified",
+        "party": "Not specified",
+        "isSigned": false,
+        "isValid": true,
+        "hash": "hash(2NAKUL DUBEY नकुल दूबे)"
+    },
+    {
+        "srNo": "3",
+        "name": "RITA BAHUGUNA रीता बहुगुणा",
+        "icon": "Not specified",
+        "party": "Not specified",
+        "isSigned": false,
+        "isValid": true,
+        "hash": "hash(3RITA BAHUGUNA रीता बहुगुणा)"
+    },
+    {
+        "srNo": "4",
+        "name": "JAVED JAFRI जावेद जाफरी",
+        "icon": "Not specified",
+        "party": "Not specified",
+        "isSigned": false,
+        "isValid": true,
+        "hash": "hash(4JAVED JAFRI जावेद जाफरी)"
+    },
+    {
+        "srNo": "5",
+        "name": "AMIT SACHAN अमित सचान",
+        "icon": "Not specified",
+        "party": "Not specified",
+        "isSigned": false,
+        "isValid": true,
+        "hash": "hash(5AMIT SACHAN अमित सचान)"
+    },
+    {
+        "srNo": "6",
+        "name": "KANTI PANDEY कान्ति पाण्डेय",
+        "icon": "Not specified",
+        "party": "Not specified",
+        "isSigned": false,
+        "isValid": true,
+        "hash": "hash(6KANTI PANDEY कान्ति पाण्डेय)"
+    },
+    {
+        "srNo": "7",
+        "name": "DEVESH TIWARI देवेश तिवारी",
+        "icon": "Not specified",
+        "party": "Not specified",
+        "isSigned": false,
+        "isValid": true,
+        "hash": "hash(7DEVESH TIWARI देवेश तिवारी)"
+    },
+    {
+        "srNo": "8",
+        "name": "MAHENDRA YADAV महेंद्र यादव",
+        "icon": "Not specified",
+        "party": "Not specified",
+        "isSigned": false,
+        "isValid": true,
+        "hash": "hash(8MAHENDRA YADAV महेंद्र यादव)"
+    },
+    {
+        "srNo": "9",
+        "name": "DILIP KANAUJIA दिलिप कनौजिया",
+        "icon": "Not specified",
+        "party": "Not specified",
+        "isSigned": false,
+        "isValid": true,
+        "hash": "hash(9DILIP KANAUJIA दिलिप कनौजिया)"
+    },
+    {
+        "srNo": "10",
+        "name": "NONE OF THE ABOVE",
+        "icon": "Not applicable",
+        "party": "Not applicable",
+        "isSigned": false,
+        "isValid": true,
+        "hash": "hash(10NONE OF THE ABOVE)"
+    }
+]
