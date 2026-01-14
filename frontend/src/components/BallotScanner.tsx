@@ -4,8 +4,11 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { extractBallotData, BallotData } from '../lib/gemini';
 import { uploadJSONToIPFS } from '../lib/ipfs';
-import { Loader2, Upload, FileJson, CheckCircle } from 'lucide-react';
+import { Loader2, Upload, FileJson, CheckCircle, ExternalLink, ShieldCheck, AlertCircle } from 'lucide-react';
 import { keccak256, toHex } from 'viem';
+import { useWriteContract, useWaitForTransactionReceipt, useAccount } from 'wagmi';
+import { BALLOT_REGISTRY_ABI } from '../abi/ballotRegistry';
+import { BALLOT_REGISTRY_ADDRESS } from '../config/contracts';
 
 const BallotScanner = () => {
     const [file, setFile] = useState<File | null>(null);
@@ -25,7 +28,19 @@ const BallotScanner = () => {
     const [ipfsHash, setIpfsHash] = useState<string | null>(null);
     const [computedBallotHash, setComputedBallotHash] = useState<string | null>(null);
     const [batchHash, setBatchHash] = useState<string | null>(null);
+    const [txHash, setTxHash] = useState<`0x${string}` | undefined>(undefined);
     const [error, setError] = useState<string | null>(null);
+
+    const { isConnected } = useAccount();
+    const { writeContractAsync, isPending: isWriting } = useWriteContract();
+
+    const {
+        isLoading: isConfirming,
+        isSuccess: isConfirmed,
+        error: txError
+    } = useWaitForTransactionReceipt({
+        hash: txHash,
+    });
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -181,24 +196,41 @@ const BallotScanner = () => {
             return;
         }
 
+        if (!isConnected) {
+            setError("Please connect your wallet first");
+            return;
+        }
+
         try {
             setIsUploading(true);
+            setError(null);
 
             // Prepare the full batch to upload
             const uploadData = batchData.length > 0 ? batchData : [data!];
 
-            // Add electionId to each item if not already present or to ensure consistency
+            // Add electionId to each item
             const finalBatch = uploadData.map(item => ({
                 ...item,
                 electionId
             }));
 
-            // Upload the WHOLE array to IPFS
+            // 1. Upload the WHOLE array to IPFS
             const ipfsUri = await uploadJSONToIPFS(finalBatch);
             setIpfsHash(ipfsUri);
+
+            // 2. Trigger Smart Contract Transaction
+            if (batchHash) {
+                const hash = await writeContractAsync({
+                    address: BALLOT_REGISTRY_ADDRESS as `0x${string}`,
+                    abi: BALLOT_REGISTRY_ABI,
+                    functionName: 'storeBallot',
+                    args: [BigInt(electionId), batchHash as `0x${string}`, ipfsUri],
+                });
+                setTxHash(hash);
+            }
         } catch (err: any) {
-            console.error("Upload error:", err);
-            setError(err.message || "Failed to upload to IPFS.");
+            console.error("Upload/Contract error:", err);
+            setError(err.shortMessage || err.message || "Failed to complete process.");
         } finally {
             setIsUploading(false);
         }
@@ -424,14 +456,29 @@ const BallotScanner = () => {
                                 <Button
                                     className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-semibold"
                                     onClick={handleUpload}
-                                    disabled={isUploading}
+                                    disabled={isUploading || isWriting || isConfirming || isConfirmed}
                                 >
                                     {isUploading ? (
                                         <>
                                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                            Uploading...
+                                            Uploading to IPFS...
                                         </>
-                                    ) : 'Verify & Upload to IPFS'}
+                                    ) : isWriting ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            Confirm in Wallet...
+                                        </>
+                                    ) : isConfirming ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            Verifying On-Chain...
+                                        </>
+                                    ) : isConfirmed ? (
+                                        <>
+                                            <ShieldCheck className="mr-2 h-4 w-4" />
+                                            Success!
+                                        </>
+                                    ) : 'Verify & Upload to Blockchain'}
                                 </Button>
                             </div>
                         ) : (
@@ -440,9 +487,37 @@ const BallotScanner = () => {
                             </div>
                         )}
 
+                        {isConfirmed && (
+                            <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
+                                <ShieldCheck className="h-5 w-5 text-green-500 mt-0.5" />
+                                <div className="space-y-1">
+                                    <p className="text-sm font-semibold text-green-600">Ballot Batch Secured</p>
+                                    <p className="text-xs text-muted-foreground">The batch hash and IPFS metadata are now permanently recorded on the blockchain.</p>
+                                    <a
+                                        href={`https://sepolia.etherscan.io/tx/${txHash}`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="text-xs text-primary underline flex items-center gap-1 mt-2"
+                                    >
+                                        View Transaction <ExternalLink className="h-3 w-3" />
+                                    </a>
+                                </div>
+                            </div>
+                        )}
+
+                        {txError && (
+                            <div className="p-4 bg-destructive/10 border border-destructive/20 text-destructive rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
+                                <AlertCircle className="h-5 w-5 mt-0.5" />
+                                <div className="space-y-1">
+                                    <p className="text-sm font-semibold">Transaction Failed</p>
+                                    <p className="text-xs opacity-80">{(txError as any)?.shortMessage || txError.message}</p>
+                                </div>
+                            </div>
+                        )}
+
                         {ipfsHash && (
                             <div className="bg-primary/10 border border-primary/20 text-foreground p-4 rounded-xl break-all space-y-4">
-                                <h3 className="font-semibold text-lg text-primary">Ready for Blockchain Transaction</h3>
+                                <h3 className="font-semibold text-lg text-primary">Metadata Details</h3>
 
                                 <div className="space-y-1">
                                     <p className="text-xs font-bold uppercase text-muted-foreground">Election ID (uint256)</p>
