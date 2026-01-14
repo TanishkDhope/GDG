@@ -12,7 +12,6 @@ import Ecosystem from '@/components/Ecosystem';
 gsap.registerPlugin(ScrollTrigger);
 
 const ProductLandingPage = () => {
-    const a =1 ;
     const navigate = useNavigate();
     const containerRef = useRef<HTMLDivElement>(null);
     const heroTextRef = useRef<HTMLHeadingElement>(null);
