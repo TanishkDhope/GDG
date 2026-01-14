@@ -4,11 +4,10 @@ import type React from "react"
 
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
-import { StepIndicator } from "@/components/step-indicator"
-import { CardContainer } from "@/components/card-container"
-
+import { Footer } from "@/components/Footer"
+import { StepIndicator } from "@/components/Step-Indicator"
+import { CardContainer } from "@/components/Card-Container"
+import { Header } from "@/components/Header"
 type VerificationStep = "voter-id" | "face" | "otp"
 
 export default function VerificationPage() {
@@ -176,7 +175,7 @@ export default function VerificationPage() {
                     onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
                     placeholder="000000"
                     className="w-full px-4 py-3 text-center text-2xl tracking-widest border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                    maxLength="6"
+                    maxLength={6}
                   />
                 </div>
 

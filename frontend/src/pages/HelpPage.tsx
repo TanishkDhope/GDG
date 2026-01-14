@@ -3,9 +3,9 @@
 import { FormEvent } from "react"
 
 import { useState } from "react"
-import { Header } from "@/components/header"
-import { Footer } from "@/components/footer"
-import { CardContainer } from "@/components/card-container"
+import { Header } from "@/components/Header"
+import { Footer } from "@/components/Footer"
+import { CardContainer } from "@/components/Card-Container"
 
 interface Complaint {
   id: string
