@@ -142,12 +142,21 @@ def get_registered_image_for_voter(voter_id):
         logger.info(f"Found voter document. Name: {name}")
         logger.info(f"Profile data - localPath: {local_path}, URL present: {bool(url)}")
 
-        # If localPath exists and file is accessible on server, use directly
-        if local_path and os.path.exists(local_path):
-            logger.info(f"Using local path: {local_path}")
-            file_size = os.path.getsize(local_path)
-            logger.info(f"Local file size: {file_size} bytes")
-            return local_path, name
+        # If localPath exists, try to resolve it
+        if local_path:
+            # Try relative to project root (go up one level from src/)
+            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            full_path = os.path.join(base_dir, local_path)
+            
+            logger.info(f"Trying resolved path: {full_path}")
+            
+            if os.path.exists(full_path):
+                logger.info(f"Using local path: {full_path}")
+                file_size = os.path.getsize(full_path)
+                logger.info(f"Local file size: {file_size} bytes")
+                return full_path, name
+            else:
+                logger.warning(f"Local path does not exist: {full_path}")
 
         # If url is present and is data:image base64, decode and save
         if url and url.startswith("data:image"):
