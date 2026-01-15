@@ -64,7 +64,7 @@ export default function Home() {
                   Register to Vote
                 </button>
                 <button
-                  onClick={() => navigate("/testVoting")}
+                  onClick={() => navigate("/voting")}
                   className="px-8 py-3 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 transition-colors shadow-md"
                 >
                   Vote Now

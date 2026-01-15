@@ -1,6 +1,6 @@
 import '@rainbow-me/rainbowkit/styles.css';
 import { getDefaultConfig } from '@rainbow-me/rainbowkit';
-import { mainnet, polygon, sepolia } from 'wagmi/chains';
+import { mainnet, polygon, sepolia , foundry} from 'wagmi/chains';
 import { defineChain } from "viem";
 
 
@@ -19,7 +19,6 @@ export const anvil = defineChain({
     },
   },
 });
-import { mainnet, polygon, sepolia, foundry } from 'wagmi/chains';
 
 export const config = getDefaultConfig({
   appName: 'My NFT Marketplace',

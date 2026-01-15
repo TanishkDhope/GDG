@@ -54,9 +54,37 @@ const voterSchema = new Schema(
       type: String,
       required: true,
       trim: true
+    },
+    // Location fields for ward-based voting
+    belongingState: {
+      type: String,
+      required: true,
+      trim: true
+    },
+    district: {
+      type: String,
+      required: true,
+      trim: true
+    },
+    ward: {
+      type: String,
+      required: true,
+      trim: true
+    },
+    // Voting status
+    hasVoted: {
+      type: Boolean,
+      default: false
+    },
+    votedAt: {
+      type: Date,
+      default: null
     }
   },
   { timestamps: true }
 );
+
+// Index for location-based queries
+voterSchema.index({ belongingState: 1, district: 1, ward: 1 });
 
 export const Voter = mongoose.model('Voter', voterSchema);
