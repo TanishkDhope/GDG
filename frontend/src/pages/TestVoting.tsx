@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -8,33 +8,97 @@ import * as snarkjs from "snarkjs";
 import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
 import { ZK_VOTING_ABI } from '@/abi/ZKVoting';
 import { ZK_VOTING_ADDRESS } from '@/config/contracts';
+import { v4 as uuidv4 } from 'uuid';
 
+import {
+  cacheVote,
+  getCachedVotes,
+  markVoteSynced,
+} from '@/lib/voteCache';
 
 const TestVoting = () => {
+    const [isOffline, setIsOffline] = useState(!navigator.onLine);
     const [isGenerating, setIsGenerating] = useState(false);
     const [result, setResult] = useState<any>(null);
     const [error, setError] = useState<string | null>(null);
     const [proofData, setProofData] = useState<any>(null);
     const [candidateId, setCandidateId] = useState<string>('1');
+    const [identitySecret, setIdentitySecret] = useState<string>('');
     const [txHash, setTxHash] = useState<`0x${string}` | undefined>(undefined);
-
+    
     const { writeContractAsync, isPending: isVoting } = useWriteContract();
     const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
         hash: txHash,
         query: { enabled: !!txHash }
     });
 
+    // Handle online/offline status
+    useEffect(() => {
+        const updateStatus = () => setIsOffline(!navigator.onLine);
+        
+        // Set initial status
+        setIsOffline(!navigator.onLine);
+        
+        // Add event listeners
+        window.addEventListener('online', updateStatus);
+        window.addEventListener('offline', updateStatus);
+
+        return () => {
+            window.removeEventListener('online', updateStatus);
+            window.removeEventListener('offline', updateStatus);
+        };
+    }, []);
+
+    const syncCachedVotes = async () => {
+        const cachedVotes = await getCachedVotes();
+
+        for (const vote of cachedVotes) {
+            if (vote.synced) continue;
+
+            try {
+                const txHash = await writeContractAsync({
+                    address: ZK_VOTING_ADDRESS as `0x${string}`,
+                    abi: ZK_VOTING_ABI,
+                    functionName: 'vote',
+                    args: [
+                        vote.proofData.a,
+                        vote.proofData.b,
+                        vote.proofData.c,
+                        vote.proofData.input,
+                        BigInt(vote.candidateId),
+                    ],
+                });
+
+                await markVoteSynced(vote.id);
+                console.log('Vote synced:', txHash);
+            } catch (err) {
+                console.error('Failed to sync vote:', vote.id, err);
+            }
+        }
+    };
+
+    useEffect(() => {
+        if (!isOffline) {
+            syncCachedVotes();
+        }
+    }, [isOffline]);
+
     const handleGenerateInput = async () => {
+        if (!identitySecret || identitySecret.trim() === '') {
+            setError('Please enter your identity secret');
+            return;
+        }
+
         setIsGenerating(true);
         setError(null);
         setResult(null);
 
         try {
-            // Generate circuit input locally in the frontend
-            const data = await generateCircuitInput();
+            // Generate circuit input with user's secret
+            const data = await generateCircuitInput(identitySecret);
             setResult(data);
             console.log(data.circuitInput)
-            
+
             const { proof, publicSignals } = await snarkjs.groth16.fullProve(
                 data.circuitInput,
                 "/voterCircuit.wasm",
@@ -56,6 +120,16 @@ const TestVoting = () => {
 
             // Store proof data for voting
             setProofData({ a, b, c, input });
+            
+            await cacheVote({
+                id: uuidv4(),
+                timestamp: Date.now(),
+                candidateId,
+                electionId: data.circuitInput.election_id,
+                proofData: { a, b, c, input },
+                synced: false,
+            });
+
             console.log('Proof data ready for voting:', { a, b, c, input });
 
         } catch (err: any) {
@@ -88,7 +162,6 @@ const TestVoting = () => {
         }
     };
 
-
     return (
         <div className="min-h-screen flex flex-col bg-background">
             <Navbar />
@@ -113,37 +186,67 @@ const TestVoting = () => {
                 <section className="py-16 md:py-24">
                     <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
                         <div className="space-y-6">
-                            {/* Action Button */}
-                            <div className="bg-card border border-border rounded-xl p-8 text-center space-y-4">
-                                <FileJson className="h-16 w-16 text-primary mx-auto" />
-                                <h2 className="text-2xl font-bold text-foreground">Generate Circuit Input</h2>
-                                <p className="text-muted-foreground">
-                                    This will create a new input.json file with:
-                                </p>
-                                <ul className="text-sm text-muted-foreground space-y-2 max-w-md mx-auto text-left">
-                                    <li>• Identity secret (voter credential)</li>
-                                    <li>• Merkle tree commitment</li>
-                                    <li>• Merkle proof path elements and indices</li>
-                                    <li>• Election ID</li>
-                                </ul>
+                            {/* Offline Status Indicator */}
+                            {isOffline && (
+                                <div className="p-3 mb-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg text-sm text-yellow-700">
+                                    You are offline. Your vote will be securely cached and synced later.
+                                </div>
+                            )}
 
-                                <Button
-                                    onClick={handleGenerateInput}
-                                    disabled={isGenerating}
-                                    className="w-full max-w-md mx-auto font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-md mt-6"
-                                >
-                                    {isGenerating ? (
-                                        <>
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                            Generating...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <FileJson className="mr-2 h-4 w-4" />
-                                            Generate input.json
-                                        </>
-                                    )}
-                                </Button>
+                            {/* Action Button */}
+                            <div className="bg-card border border-border rounded-xl p-8 space-y-6">
+                                <div className="text-center">
+                                    <FileJson className="h-16 w-16 text-primary mx-auto mb-4" />
+                                    <h2 className="text-2xl font-bold text-foreground">Generate Zero-Knowledge Proof</h2>
+                                    <p className="text-muted-foreground mt-2">
+                                        Enter your secret voter credential to generate a ZK proof
+                                    </p>
+                                </div>
+
+                                <div className="max-w-md mx-auto space-y-4">
+                                    <div>
+                                        <label className="text-sm font-medium mb-2 block text-left">
+                                            Your Identity Secret
+                                        </label>
+                                        <Input
+                                            type="text"
+                                            value={identitySecret}
+                                            onChange={(e) => setIdentitySecret(e.target.value)}
+                                            placeholder="Enter your secret (e.g., 123456789)"
+                                            className="w-full font-mono"
+                                        />
+                                        <p className="text-xs text-muted-foreground mt-1 text-left">
+                                            This secret was provided to you during registration
+                                        </p>
+                                    </div>
+
+                                    <div className="bg-muted/50 rounded-lg p-4 text-left">
+                                        <p className="text-xs font-semibold text-foreground mb-2">This will generate:</p>
+                                        <ul className="text-xs text-muted-foreground space-y-1">
+                                            <li>• Merkle tree commitment from your secret</li>
+                                            <li>• Merkle proof path elements and indices</li>
+                                            <li>• Zero-knowledge proof for anonymous voting</li>
+                                        </ul>
+                                    </div>
+
+                                    <Button
+                                        onClick={handleGenerateInput}
+                                        disabled={isGenerating || !identitySecret}
+                                        className="w-full font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-md"
+                                    >
+                                        {isGenerating ? (
+                                            <>
+                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                Generating Proof...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <FileJson className="mr-2 h-4 w-4" />
+                                                Generate ZK Proof
+                                            </>
+                                        )}
+                                    </Button>
+                                </div>
                             </div>
 
                             {/* Error Display */}
@@ -180,6 +283,13 @@ const TestVoting = () => {
                                             <p className="text-xs font-bold uppercase text-muted-foreground mb-1">Merkle Root</p>
                                             <p className="font-mono bg-background p-2 rounded text-sm text-foreground break-all">
                                                 {result.circuitInput?.merkle_root || result.merkle_root}
+                                            </p>
+                                        </div>
+
+                                        <div>
+                                            <p className="text-xs font-bold uppercase text-muted-foreground mb-1">Total Voters in Tree</p>
+                                            <p className="font-mono bg-background p-2 rounded text-sm text-foreground break-all">
+                                                {result.totalVoters || 1}
                                             </p>
                                         </div>
 
