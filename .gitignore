@@ -1,1 +1,16 @@
 circuits
+# Node
+node_modules/
+
+# Python
+venv/
+.venv/
+
+# ENV FILES (IMPORTANT)
+.env
+.env.*
+**/.env
+**/.env.*
+
+# Logs
+*.log
