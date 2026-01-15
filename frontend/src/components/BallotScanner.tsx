@@ -1,21 +1,17 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from './Navbar';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { extractBallotData, BallotData } from '../lib/gemini';
+import { BallotData } from '../lib/gemini';
 import { uploadJSONToIPFS } from '../lib/ipfs';
-import { Loader2, Upload, FileJson, CheckCircle, ExternalLink, ShieldCheck, AlertCircle } from 'lucide-react';
-import { keccak256, toHex } from 'viem';
-import { useWriteContract, useWaitForTransactionReceipt, useAccount } from 'wagmi';
+import { Loader2, CheckCircle, ExternalLink, ShieldCheck, AlertCircle } from 'lucide-react';
+import { keccak256, toHex, getAddress } from 'viem';
+import { useWriteContract, useWaitForTransactionReceipt, useAccount, usePublicClient } from 'wagmi';
 import { BALLOT_REGISTRY_ABI } from '../abi/ballotRegistry';
 import { BALLOT_REGISTRY_ADDRESS } from '../config/contracts';
 
 const BallotScanner = () => {
-    const [file, setFile] = useState<File | null>(null);
-    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-    const [isScanning, setIsScanning] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
-    const [mode, setMode] = useState<'scan' | 'json'>('scan');
     const [jsonText, setJsonText] = useState("");
     const [batchData, setBatchData] = useState<BallotData[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -31,7 +27,8 @@ const BallotScanner = () => {
     const [txHash, setTxHash] = useState<`0x${string}` | undefined>(undefined);
     const [error, setError] = useState<string | null>(null);
 
-    const { isConnected } = useAccount();
+    const { isConnected, address } = useAccount();
+    const publicClient = usePublicClient();
     const { writeContractAsync, isPending: isWriting } = useWriteContract();
 
     const {
@@ -42,7 +39,7 @@ const BallotScanner = () => {
         hash: txHash,
     });
 
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    // Removed fileInputRef as it was for UI Scan mode
 
     // Auto-calculate hash whenever name or srNo changes
     useEffect(() => {
@@ -75,40 +72,7 @@ const BallotScanner = () => {
         }
     }, [batchData]);
 
-    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const selectedFile = event.target.files?.[0];
-        if (selectedFile) {
-            setFile(selectedFile);
-            setError(null);
-            setData(null);
-            setIpfsHash(null);
-            setComputedBallotHash(null);
-
-            // Create preview URL
-            const objectUrl = URL.createObjectURL(selectedFile);
-            setPreviewUrl(objectUrl);
-        }
-    };
-
-    const handleScan = async () => {
-        if (!file) return;
-
-        try {
-            setIsScanning(true);
-            setError(null);
-
-            const extracted = await extractBallotData(file);
-            setData(extracted);
-            // Ensure batchData has the newly scanned item
-            setBatchData([extracted]);
-            setCurrentIndex(0);
-        } catch (err: any) {
-            console.error("Scan error:", err);
-            setError(err.message || "Failed to scan ballot.");
-        } finally {
-            setIsScanning(false);
-        }
-    };
+    // Removed handleFileChange and handleScan as they were for the AI Scan mode
 
     const handleJsonImport = () => {
         try {
@@ -214,7 +178,35 @@ const BallotScanner = () => {
                 electionId
             }));
 
-            // 1. Upload the WHOLE array to IPFS
+            // 1. PRE-FLIGHT SIMULATION
+            // Check if transaction is likely to succeed (admin check, election ID check)
+            // We use a dummy IPFS hash for simulation
+            try {
+                console.log("DEBUG: Running pre-flight simulation...");
+                await publicClient?.simulateContract({
+                    address: getAddress(BALLOT_REGISTRY_ADDRESS),
+                    abi: BALLOT_REGISTRY_ABI,
+                    functionName: 'storeBallot',
+                    args: [BigInt(electionId), (batchHash || "0x0") as `0x${string}`, "ipfs://simulation-placeholder"],
+                    account: address,
+                });
+                console.log("DEBUG: Simulation successful!");
+            } catch (simErr: any) {
+                console.error("DEBUG: Simulation failed:", simErr);
+                const reason = simErr.shortMessage || simErr.message || "Simulation failed";
+
+                if (reason.includes("Only admin")) {
+                    setError("Unauthorized: Only the contract admin can upload ballots.");
+                } else if (reason.includes("already stored")) {
+                    setError(`Error: Election ID ${electionId} has already been registered on-chain.`);
+                } else {
+                    setError(`Transaction would fail: ${reason}`);
+                }
+                return;
+            }
+
+            // 2. Upload the WHOLE array to IPFS (Only if simulation passed)
+            setIsUploading(true); // Re-affirming loading state for IPFS
             const ipfsUri = await uploadJSONToIPFS(finalBatch);
             setIpfsHash(ipfsUri);
 
@@ -241,90 +233,25 @@ const BallotScanner = () => {
 
     return (
         <div className="min-h-screen bg-background pb-12">
-            <Navbar />
-
-            <div className="container mx-auto px-4 pt-8 max-w-4xl">
+            <div className="container mx-auto px-4 pt-8 max-w-5xl">
                 <h1 className="text-3xl font-bold mb-2">Gov Admin: Ballot Scanner</h1>
                 <p className="text-muted-foreground mb-8">Upload verified ballot scans to digitize and secure them on IPFS.</p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     {/* Left Column: Input Method */}
                     <div className="space-y-6">
-                        <div className="flex gap-2 p-1 bg-muted rounded-lg">
-                            <button
-                                onClick={() => setMode('scan')}
-                                className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${mode === 'scan' ? 'bg-background shadow-sm' : 'text-muted-foreground hover:bg-muted-foreground/10'}`}
-                            >
-                                AI Scan
-                            </button>
-                            <button
-                                onClick={() => setMode('json')}
-                                className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${mode === 'json' ? 'bg-background shadow-sm' : 'text-muted-foreground hover:bg-muted-foreground/10'}`}
-                            >
-                                Direct JSON
-                            </button>
-                        </div>
-
-                        {mode === 'scan' ? (
-                            <div className="space-y-4 animate-in fade-in duration-300">
-                                <div
-                                    className="border-2 border-dashed border-input rounded-xl p-8 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-muted/50 transition-colors h-64 overflow-hidden relative"
-                                    onClick={() => fileInputRef.current?.click()}
-                                >
-                                    <input
-                                        type="file"
-                                        ref={fileInputRef}
-                                        className="hidden"
-                                        accept="application/pdf,image/*"
-                                        onChange={handleFileChange}
-                                    />
-
-                                    {previewUrl ? (
-                                        file?.type.startsWith('image/') ? (
-                                            <img src={previewUrl} alt="Preview" className="w-full h-full object-contain" />
-                                        ) : (
-                                            <div className="flex flex-col items-center">
-                                                <FileJson className="h-12 w-12 text-primary mb-2" />
-                                                <span className="text-sm font-medium">{file?.name}</span>
-                                            </div>
-                                        )
-                                    ) : (
-                                        <>
-                                            <Upload className="h-10 w-10 text-muted-foreground mb-4" />
-                                            <p className="text-sm font-medium">Click to upload Ballot (PDF or Image)</p>
-                                            <p className="text-xs text-muted-foreground mt-1">Supports PDF, PNG, JPG</p>
-                                        </>
-                                    )}
+                        <div className="space-y-4 animate-in fade-in duration-300">
+                            <div className="space-y-4">
+                                <div className="flex justify-between items-center">
+                                    <h2 className="text-xl font-semibold">Direct JSON Import</h2>
+                                    <label className="text-xs text-primary cursor-pointer hover:underline">
+                                        Upload JSON File
+                                        <input type="file" accept=".json" className="hidden" onChange={handleJsonFileChange} />
+                                    </label>
                                 </div>
-
-                                <Button
-                                    onClick={handleScan}
-                                    disabled={!file || isScanning}
-                                    className="w-full font-semibold shadow-lg shadow-primary/20"
-                                >
-                                    {isScanning ? (
-                                        <>
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                            Analyzing with AI...
-                                        </>
-                                    ) : (
-                                        'Scan & Extract Data'
-                                    )}
-                                </Button>
-                            </div>
-                        ) : (
-                            <div className="space-y-4 animate-in fade-in duration-300">
-                                <div className="space-y-4">
-                                    <div className="flex justify-between items-center">
-                                        <label className="text-sm font-medium">Paste Ballot JSON</label>
-                                        <label className="text-xs text-primary cursor-pointer hover:underline">
-                                            Upload JSON File
-                                            <input type="file" accept=".json" className="hidden" onChange={handleJsonFileChange} />
-                                        </label>
-                                    </div>
-                                    <textarea
-                                        className="w-full h-64 p-4 rounded-xl border border-border bg-card font-mono text-xs resize-none focus:outline-none focus:ring-2 focus:ring-primary/50"
-                                        placeholder={`{
+                                <textarea
+                                    className="w-full h-80 p-4 rounded-xl border border-border bg-card font-mono text-xs resize-none focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                    placeholder={`{
   "srNo": "1",
   "name": "John Doe",
   "icon": "Lotus",
@@ -332,20 +259,19 @@ const BallotScanner = () => {
   "isSigned": true,
   "isValid": true
 }`}
-                                        value={jsonText}
-                                        onChange={(e) => setJsonText(e.target.value)}
-                                    />
-                                    <Button
-                                        onClick={handleJsonImport}
-                                        disabled={!jsonText}
-                                        className="w-full font-semibold bg-secondary text-secondary-foreground hover:bg-muted border border-border"
-                                        variant="secondary"
-                                    >
-                                        Import JSON Data
-                                    </Button>
-                                </div>
+                                    value={jsonText}
+                                    onChange={(e) => setJsonText(e.target.value)}
+                                />
+                                <Button
+                                    onClick={handleJsonImport}
+                                    disabled={!jsonText}
+                                    className="w-full font-semibold bg-secondary text-secondary-foreground hover:bg-muted border border-border"
+                                    variant="secondary"
+                                >
+                                    Import & Preview Data
+                                </Button>
                             </div>
-                        )}
+                        </div>
 
                         {error && (
                             <div className="p-4 bg-destructive/10 border border-destructive/20 text-destructive rounded-xl text-sm animate-in">
@@ -481,12 +407,12 @@ const BallotScanner = () => {
                                             <ShieldCheck className="mr-2 h-4 w-4" />
                                             Success!
                                         </>
-                                    ) : 'Verify & Upload to Blockchain'}
+                                    ) : 'Push to Blockchain'}
                                 </Button>
                             </div>
                         ) : (
                             <div className="h-full flex items-center justify-center text-muted-foreground text-sm border-2 border-dashed border-border rounded-xl p-8 bg-card">
-                                Scan a document to verify data here
+                                Import JSON data to verify here
                             </div>
                         )}
 
@@ -518,7 +444,7 @@ const BallotScanner = () => {
                             </div>
                         )}
 
-                        {ipfsHash && (
+                        {ipfsHash && isConfirmed && (
                             <div className="bg-primary/10 border border-primary/20 text-foreground p-4 rounded-xl break-all space-y-4">
                                 <h3 className="font-semibold text-lg text-primary">Metadata Details</h3>
 
@@ -551,7 +477,8 @@ const BallotScanner = () => {
                     </div>
                 </div>
             </div>
-        </div>)
+        </div>
+    );
 }
 
 export default BallotScanner

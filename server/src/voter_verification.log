@@ -1,0 +1,193 @@
+2026-01-15 04:13:45,234 - __main__ - INFO - Connecting to MongoDB at mongodb://localhost:27017
+2026-01-15 04:13:45,251 - __main__ - INFO - Connected to database 'mydb', collection 'voters'
+2026-01-15 04:13:45,255 - __main__ - INFO - Starting Voter Verification Service on port 8000
+2026-01-15 04:13:45,257 - __main__ - INFO - Configuration:
+2026-01-15 04:13:45,257 - __main__ - INFO -   - MongoDB URI: mongodb://localhost:27017
+2026-01-15 04:13:45,257 - __main__ - INFO -   - Database: mydb
+2026-01-15 04:13:45,261 - __main__ - INFO -   - Collection: voters
+2026-01-15 04:13:45,263 - __main__ - INFO -   - Temp Directory: /tmp/voter_verification
+2026-01-15 04:13:45,326 - werkzeug - WARNING -  * Debugger is active!
+2026-01-15 04:13:45,337 - werkzeug - INFO -  * Debugger PIN: 118-068-492
+2026-01-15 04:14:07,642 - werkzeug - INFO - 127.0.0.1 - - [15/Jan/2026 04:14:07] "OPTIONS /verify HTTP/1.1" 200 -
+2026-01-15 04:14:07,888 - __main__ - INFO - ==================================================
+2026-01-15 04:14:07,888 - __main__ - INFO - STARTING VERIFICATION REQUEST
+2026-01-15 04:14:07,902 - __main__ - INFO - Request received - Voter ID: None
+2026-01-15 04:14:07,902 - __main__ - INFO - Image data present: False
+2026-01-15 04:14:07,904 - __main__ - INFO - Image data type: <class 'NoneType'>
+2026-01-15 04:14:07,904 - __main__ - ERROR - Missing voter_id or image data in request
+2026-01-15 04:14:07,904 - werkzeug - INFO - 127.0.0.1 - - [15/Jan/2026 04:14:07] "POST /verify HTTP/1.1" 200 -
+2026-01-15 04:14:55,443 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Tanvi Khadatkar\\GDG\\server\\src\\app.py', reloading
+2026-01-15 04:15:10,768 - __main__ - INFO - Connecting to MongoDB at mongodb://localhost:27017
+2026-01-15 04:17:27,020 - __main__ - INFO - Connecting to MongoDB at None
+2026-01-15 04:17:27,022 - __main__ - INFO - Connected to database 'gdghackathon', collection 'voters'
+2026-01-15 04:17:27,028 - __main__ - INFO - Starting Voter Verification Service on port 5000
+2026-01-15 04:17:27,028 - __main__ - INFO - Configuration:
+2026-01-15 04:17:27,031 - __main__ - INFO -   - MongoDB URI: None
+2026-01-15 04:17:27,031 - __main__ - INFO -   - Database: gdghackathon
+2026-01-15 04:17:27,031 - __main__ - INFO -   - Collection: voters
+2026-01-15 04:17:27,031 - __main__ - INFO -   - Temp Directory: /tmp/voter_verification
+2026-01-15 04:17:27,082 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.6:5000
+2026-01-15 04:17:27,082 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-01-15 04:17:27,090 - werkzeug - INFO -  * Restarting with stat
+2026-01-15 04:17:38,614 - __main__ - INFO - Connecting to MongoDB at mongodb+srv://sanskar007:yehaipassword@cluster0.qsr4wap.mongodb.net/gdghackathon
+2026-01-15 04:17:38,973 - __main__ - INFO - Connected to database 'gdghackathon', collection 'voters'
+2026-01-15 04:17:38,989 - __main__ - INFO - Starting Voter Verification Service on port 8000
+2026-01-15 04:17:38,989 - __main__ - INFO - Configuration:
+2026-01-15 04:17:38,989 - __main__ - INFO -   - MongoDB URI: mongodb+srv://sanskar007:yehaipassword@cluster0.qsr4wap.mongodb.net/gdghackathon
+2026-01-15 04:17:38,989 - __main__ - INFO -   - Database: gdghackathon
+2026-01-15 04:17:38,989 - __main__ - INFO -   - Collection: voters
+2026-01-15 04:17:38,989 - __main__ - INFO -   - Temp Directory: /tmp/voter_verification
+2026-01-15 04:17:39,022 - werkzeug - WARNING -  * Debugger is active!
+2026-01-15 04:17:39,028 - werkzeug - INFO -  * Debugger PIN: 118-068-492
+2026-01-15 04:18:17,374 - werkzeug - INFO - 127.0.0.1 - - [15/Jan/2026 04:18:17] "OPTIONS /verify HTTP/1.1" 200 -
+2026-01-15 04:18:17,608 - __main__ - INFO - ==================================================
+2026-01-15 04:18:17,618 - __main__ - INFO - STARTING VERIFICATION REQUEST
+2026-01-15 04:18:17,622 - __main__ - INFO - Request received - Voter ID: None
+2026-01-15 04:18:17,622 - __main__ - INFO - Image data present: False
+2026-01-15 04:18:17,622 - __main__ - INFO - Image data type: <class 'NoneType'>
+2026-01-15 04:18:17,625 - __main__ - ERROR - Missing voter_id or image data in request
+2026-01-15 04:18:17,626 - werkzeug - INFO - 127.0.0.1 - - [15/Jan/2026 04:18:17] "POST /verify HTTP/1.1" 200 -
+2026-01-15 04:19:36,544 - werkzeug - INFO - 127.0.0.1 - - [15/Jan/2026 04:19:36] "OPTIONS /verify HTTP/1.1" 200 -
+2026-01-15 04:19:36,782 - __main__ - INFO - ==================================================
+2026-01-15 04:19:36,782 - __main__ - INFO - STARTING VERIFICATION REQUEST
+2026-01-15 04:19:36,783 - __main__ - INFO - Request received - Voter ID: None
+2026-01-15 04:19:36,783 - __main__ - INFO - Image data present: False
+2026-01-15 04:19:36,785 - __main__ - INFO - Image data type: <class 'NoneType'>
+2026-01-15 04:19:36,785 - __main__ - ERROR - Missing voter_id or image data in request
+2026-01-15 04:19:36,787 - werkzeug - INFO - 127.0.0.1 - - [15/Jan/2026 04:19:36] "POST /verify HTTP/1.1" 200 -
+2026-01-15 04:20:25,745 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Tanvi Khadatkar\\GDG\\server\\src\\app.py', reloading
+2026-01-15 04:20:27,836 - werkzeug - INFO -  * Restarting with stat
+2026-01-15 04:20:55,047 - __main__ - INFO - Connecting to MongoDB at mongodb+srv://sanskar007:yehaipassword@cluster0.qsr4wap.mongodb.net/gdghackathon
+2026-01-15 04:20:55,372 - __main__ - INFO - Connected to database 'gdghackathon', collection 'voters'
+2026-01-15 04:20:55,375 - __main__ - INFO - Starting Voter Verification Service on port 8000
+2026-01-15 04:20:55,375 - __main__ - INFO - Configuration:
+2026-01-15 04:20:55,376 - __main__ - INFO -   - MongoDB URI: mongodb+srv://sanskar007:yehaipassword@cluster0.qsr4wap.mongodb.net/gdghackathon
+2026-01-15 04:20:55,376 - __main__ - INFO -   - Database: gdghackathon
+2026-01-15 04:20:55,378 - __main__ - INFO -   - Collection: voters
+2026-01-15 04:20:55,378 - __main__ - INFO -   - Temp Directory: /tmp/voter_verification
+2026-01-15 04:20:55,431 - werkzeug - WARNING -  * Debugger is active!
+2026-01-15 04:20:55,441 - werkzeug - INFO -  * Debugger PIN: 118-068-492
+2026-01-15 04:21:06,262 - werkzeug - INFO - 127.0.0.1 - - [15/Jan/2026 04:21:06] "OPTIONS /verify HTTP/1.1" 200 -
+2026-01-15 04:21:06,516 - __main__ - INFO - ==================================================
+2026-01-15 04:21:06,516 - __main__ - INFO - STARTING VERIFICATION REQUEST
+2026-01-15 04:21:06,520 - __main__ - INFO - Request received - Voter ID: None
+2026-01-15 04:21:06,520 - __main__ - INFO - Image data present: False
+2026-01-15 04:21:06,520 - __main__ - INFO - Image data type: <class 'NoneType'>
+2026-01-15 04:21:06,523 - __main__ - ERROR - Missing voter_id or image data in request
+2026-01-15 04:21:06,523 - werkzeug - INFO - 127.0.0.1 - - [15/Jan/2026 04:21:06] "POST /verify HTTP/1.1" 200 -
+2026-01-15 04:22:42,761 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Tanvi Khadatkar\\GDG\\server\\src\\app.py', reloading
+2026-01-15 04:22:45,061 - werkzeug - INFO -  * Restarting with stat
+2026-01-15 04:23:04,493 - __main__ - INFO - Connecting to MongoDB at mongodb+srv://sanskar007:yehaipassword@cluster0.qsr4wap.mongodb.net/gdghackathon
+2026-01-15 04:23:05,043 - __main__ - INFO - Connected to database 'gdghackathon', collection 'voters'
+2026-01-15 04:23:05,048 - __main__ - INFO - Starting Voter Verification Service on port 8000
+2026-01-15 04:23:05,048 - __main__ - INFO - Configuration:
+2026-01-15 04:23:05,050 - __main__ - INFO -   - MongoDB URI: mongodb+srv://sanskar007:yehaipassword@cluster0.qsr4wap.mongodb.net/gdghackathon
+2026-01-15 04:23:05,051 - __main__ - INFO -   - Database: gdghackathon
+2026-01-15 04:23:05,052 - __main__ - INFO -   - Collection: voters
+2026-01-15 04:23:05,052 - __main__ - INFO -   - Temp Directory: /tmp/voter_verification
+2026-01-15 04:23:05,106 - werkzeug - WARNING -  * Debugger is active!
+2026-01-15 04:23:05,125 - werkzeug - INFO -  * Debugger PIN: 118-068-492
+2026-01-15 04:23:20,276 - werkzeug - INFO - 127.0.0.1 - - [15/Jan/2026 04:23:20] "OPTIONS /verify HTTP/1.1" 200 -
+2026-01-15 04:23:20,528 - __main__ - INFO - ==================================================
+2026-01-15 04:23:20,528 - __main__ - INFO - STARTING VERIFICATION REQUEST
+2026-01-15 04:23:20,528 - __main__ - ERROR - Verification error: 'Request' object has no attribute 'body'
+Traceback (most recent call last):
+  File "C:\Users\Tanvi Khadatkar\GDG\server\src\app.py", line 191, in verify
+    voter_id = request.body.get('voter_id')
+               ^^^^^^^^^^^^
+AttributeError: 'Request' object has no attribute 'body'
+2026-01-15 04:23:20,528 - werkzeug - INFO - 127.0.0.1 - - [15/Jan/2026 04:23:20] "POST /verify HTTP/1.1" 200 -
+2026-01-15 04:23:47,989 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Tanvi Khadatkar\\GDG\\server\\src\\app.py', reloading
+2026-01-15 04:23:50,303 - werkzeug - INFO -  * Restarting with stat
+2026-01-15 04:24:18,321 - __main__ - INFO - Connecting to MongoDB at mongodb+srv://sanskar007:yehaipassword@cluster0.qsr4wap.mongodb.net/gdghackathon
+2026-01-15 04:24:18,845 - __main__ - INFO - Connected to database 'gdghackathon', collection 'voters'
+2026-01-15 04:24:18,852 - __main__ - INFO - Starting Voter Verification Service on port 8000
+2026-01-15 04:24:18,852 - __main__ - INFO - Configuration:
+2026-01-15 04:24:18,852 - __main__ - INFO -   - MongoDB URI: mongodb+srv://sanskar007:yehaipassword@cluster0.qsr4wap.mongodb.net/gdghackathon
+2026-01-15 04:24:18,853 - __main__ - INFO -   - Database: gdghackathon
+2026-01-15 04:24:18,853 - __main__ - INFO -   - Collection: voters
+2026-01-15 04:24:18,853 - __main__ - INFO -   - Temp Directory: /tmp/voter_verification
+2026-01-15 04:24:18,918 - werkzeug - WARNING -  * Debugger is active!
+2026-01-15 04:24:18,932 - werkzeug - INFO -  * Debugger PIN: 118-068-492
+2026-01-15 04:24:34,045 - werkzeug - INFO - 127.0.0.1 - - [15/Jan/2026 04:24:34] "OPTIONS /verify HTTP/1.1" 200 -
+2026-01-15 04:24:34,302 - __main__ - INFO - ==================================================
+2026-01-15 04:24:34,302 - __main__ - INFO - STARTING VERIFICATION REQUEST
+2026-01-15 04:24:34,308 - __main__ - INFO - Request received - Voter ID: None
+2026-01-15 04:24:34,309 - __main__ - INFO - Image data present: False
+2026-01-15 04:24:34,309 - __main__ - INFO - Image data type: <class 'NoneType'>
+2026-01-15 04:24:34,309 - __main__ - ERROR - Missing voter_id or image data in request
+2026-01-15 04:24:34,311 - werkzeug - INFO - 127.0.0.1 - - [15/Jan/2026 04:24:34] "POST /verify HTTP/1.1" 200 -
+2026-01-15 04:25:13,893 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Tanvi Khadatkar\\GDG\\server\\src\\app.py', reloading
+2026-01-15 04:25:16,213 - werkzeug - INFO -  * Restarting with stat
+2026-01-15 04:25:37,945 - __main__ - INFO - Connecting to MongoDB at mongodb+srv://sanskar007:yehaipassword@cluster0.qsr4wap.mongodb.net/gdghackathon
+2026-01-15 04:25:38,436 - __main__ - INFO - Connected to database 'gdghackathon', collection 'voters'
+2026-01-15 04:25:38,442 - __main__ - INFO - Starting Voter Verification Service on port 8000
+2026-01-15 04:25:38,444 - __main__ - INFO - Configuration:
+2026-01-15 04:25:38,444 - __main__ - INFO -   - MongoDB URI: mongodb+srv://sanskar007:yehaipassword@cluster0.qsr4wap.mongodb.net/gdghackathon
+2026-01-15 04:25:38,444 - __main__ - INFO -   - Database: gdghackathon
+2026-01-15 04:25:38,446 - __main__ - INFO -   - Collection: voters
+2026-01-15 04:25:38,446 - __main__ - INFO -   - Temp Directory: /tmp/voter_verification
+2026-01-15 04:25:38,513 - werkzeug - WARNING -  * Debugger is active!
+2026-01-15 04:25:38,531 - werkzeug - INFO -  * Debugger PIN: 118-068-492
+2026-01-15 07:45:35,473 - werkzeug - INFO - 127.0.0.1 - - [15/Jan/2026 07:45:35] "OPTIONS /verify HTTP/1.1" 200 -
+2026-01-15 07:45:35,637 - __main__ - INFO - ==================================================
+2026-01-15 07:45:35,637 - __main__ - INFO - STARTING VERIFICATION REQUEST
+2026-01-15 07:45:35,649 - __main__ - INFO - Request received - Voter ID: INDVOT900101
+2026-01-15 07:45:35,649 - __main__ - INFO - Image data present: True
+2026-01-15 07:45:35,649 - __main__ - INFO - Image data type: <class 'str'>
+2026-01-15 07:45:35,649 - __main__ - INFO - Step 1: Fetching registered image...
+2026-01-15 07:45:35,649 - __main__ - INFO - Looking up registered image for voter ID: INDVOT900101
+2026-01-15 07:45:35,933 - __main__ - INFO - Found voter document. Name: Tanvi Khadatkar
+2026-01-15 07:45:35,933 - __main__ - INFO - Profile data - localPath: public/images/voters/tanvi.jpeg, URL present: True
+2026-01-15 07:45:35,933 - __main__ - WARNING - No valid image source found for voter
+2026-01-15 07:45:35,933 - __main__ - ERROR - No registered image found for voter ID: INDVOT900101
+2026-01-15 07:45:35,933 - werkzeug - INFO - 127.0.0.1 - - [15/Jan/2026 07:45:35] "POST /verify HTTP/1.1" 200 -
+2026-01-15 07:49:25,897 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Tanvi Khadatkar\\GDG\\server\\src\\app.py', reloading
+2026-01-15 07:49:28,437 - werkzeug - INFO -  * Restarting with stat
+2026-01-15 08:04:05,691 - __main__ - INFO - Connecting to MongoDB at None
+2026-01-15 08:04:05,776 - __main__ - INFO - Connected to database 'gdghackathon', collection 'voters'
+2026-01-15 08:04:05,780 - __main__ - INFO - Starting Voter Verification Service on port 5000
+2026-01-15 08:04:05,780 - __main__ - INFO - Configuration:
+2026-01-15 08:04:05,781 - __main__ - INFO -   - MongoDB URI: None
+2026-01-15 08:04:05,781 - __main__ - INFO -   - Database: gdghackathon
+2026-01-15 08:04:05,782 - __main__ - INFO -   - Collection: voters
+2026-01-15 08:04:05,782 - __main__ - INFO -   - Temp Directory: /tmp/voter_verification
+2026-01-15 08:04:05,987 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.6:5000
+2026-01-15 08:04:05,988 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-01-15 08:04:05,995 - werkzeug - INFO -  * Restarting with stat
+2026-01-15 08:04:18,183 - __main__ - INFO - Connecting to MongoDB at mongodb+srv://sanskar007:yehaipassword@cluster0.qsr4wap.mongodb.net/gdghackathon
+2026-01-15 08:04:18,605 - __main__ - INFO - Connected to database 'gdghackathon', collection 'voters'
+2026-01-15 08:04:18,607 - __main__ - INFO - Starting Voter Verification Service on port 8000
+2026-01-15 08:04:18,607 - __main__ - INFO - Configuration:
+2026-01-15 08:04:18,608 - __main__ - INFO -   - MongoDB URI: mongodb+srv://sanskar007:yehaipassword@cluster0.qsr4wap.mongodb.net/gdghackathon
+2026-01-15 08:04:18,608 - __main__ - INFO -   - Database: gdghackathon
+2026-01-15 08:04:18,608 - __main__ - INFO -   - Collection: voters
+2026-01-15 08:04:18,608 - __main__ - INFO -   - Temp Directory: /tmp/voter_verification
+2026-01-15 08:04:18,637 - werkzeug - WARNING -  * Debugger is active!
+2026-01-15 08:04:18,645 - werkzeug - INFO -  * Debugger PIN: 118-068-492
+2026-01-15 08:04:57,194 - werkzeug - INFO - 127.0.0.1 - - [15/Jan/2026 08:04:57] "OPTIONS /verify HTTP/1.1" 200 -
+2026-01-15 08:04:57,440 - __main__ - INFO - ==================================================
+2026-01-15 08:04:57,441 - __main__ - INFO - STARTING VERIFICATION REQUEST
+2026-01-15 08:04:57,441 - __main__ - INFO - Request method: POST
+2026-01-15 08:04:57,441 - __main__ - INFO - Content-Type: application/json
+2026-01-15 08:04:57,442 - __main__ - INFO - Content-Length: 69729
+2026-01-15 08:04:57,443 - __main__ - INFO - Raw data preview: {"voter_id":"INDVOT900101","image":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+2026-01-15 08:04:57,443 - __main__ - INFO - Parsed JSON keys: ['voter_id', 'image']
+2026-01-15 08:04:57,443 - __main__ - INFO - Final extracted - Voter ID: INDVOT900101
+2026-01-15 08:04:57,444 - __main__ - INFO - Image data present: True
+2026-01-15 08:04:57,444 - __main__ - INFO - Image data type: <class 'str'>
+2026-01-15 08:04:57,445 - __main__ - INFO - Image data starts with: data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD...
+2026-01-15 08:04:57,445 - __main__ - INFO - Image data is base64: True
+2026-01-15 08:04:57,445 - __main__ - INFO - Step 1: Fetching registered image...
+2026-01-15 08:04:57,445 - __main__ - INFO - Looking up registered image for voter ID: INDVOT900101
+2026-01-15 08:04:57,540 - __main__ - INFO - Found voter document. Name: Tanvi Khadatkar
+2026-01-15 08:04:57,540 - __main__ - INFO - Profile data - localPath: public/images/voters/tanvi.jpeg, URL present: True
+2026-01-15 08:04:57,540 - __main__ - WARNING - No valid image source found for voter
+2026-01-15 08:04:57,541 - __main__ - ERROR - No registered image found for voter ID: INDVOT900101
+2026-01-15 08:04:57,541 - werkzeug - INFO - 127.0.0.1 - - [15/Jan/2026 08:04:57] "POST /verify HTTP/1.1" 200 -

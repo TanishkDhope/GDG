@@ -19,6 +19,7 @@ export const anvil = defineChain({
     },
   },
 });
+import { mainnet, polygon, sepolia, foundry } from 'wagmi/chains';
 
 export const config = getDefaultConfig({
   appName: 'My NFT Marketplace',

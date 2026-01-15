@@ -13,13 +13,25 @@ contract Ballot {
         admin = msg.sender;
     }
 
-    function vote(bytes32 token, uint256 candidateId) external {
+    uint256 public constant VOTE_FEE = 0.000001 ether;
+    address public constant TREASURY = 0x00Bd67C393E1fCb9E8265a7ED1b7F6300b185083;
+
+    function vote(bytes32 token, uint256 candidateId) external payable {
+        require(msg.value >= VOTE_FEE, "Insufficient fee");
         require(!tokenUsed[token], "Token already used");
 
         tokenUsed[token] = true;
         candidateVotes[candidateId]++;
 
+        // Transfer fee to treasury immediately
+        payable(TREASURY).transfer(msg.value);
+
         emit VoteCast(token, candidateId);
+    }
+
+    function withdraw() external {
+        require(msg.sender == admin, "Only admin");
+        payable(admin).transfer(address(this).balance);
     }
 
     function getVotes(uint256 candidateId) external view returns (uint256) {
