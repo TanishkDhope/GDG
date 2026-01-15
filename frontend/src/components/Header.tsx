@@ -51,12 +51,12 @@ export function Header({ showNav = true }: HeaderProps) {
               >
                 Help
               </button>
-              <button
+              {/* <button
                 onClick={() => navigate("/admin")}
                 className="text-sm font-medium text-foreground hover:text-primary transition-colors"
               >
                 Admin
-              </button>
+              </button> */}
             </nav>
           )}
           <ConnectButton />
