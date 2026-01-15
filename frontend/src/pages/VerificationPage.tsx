@@ -1,38 +1,27 @@
 import type React from "react"
 import { useEffect, useRef, useState } from "react"
-import { useNavigate } from "react-router-dom"
 import { Footer } from "@/components/Footer"
 import { StepIndicator } from "@/components/Step-Indicator"
 import { CardContainer } from "@/components/Card-Container"
 import { Header } from "@/components/Header"
 import axios from "axios"
+import { generateCircuitInput } from '../lib/circuitGenerator'
+import { useNavigate } from "react-router-dom"
+
 
 type VerificationStep = "voter-id" | "face" | "otp"
 
-interface VoterInfo {
-  _id: string
-  fullName: string
-  voterID: string
-  phoneNumber: string
-  belongingState: string
-  district: string
-  ward: string
-  hasVoted: boolean
-  votedAt: string | null
-  profilePicture: { url: string; localPath: string }
-}
-
 export default function VerificationPage() {
-  const navigate = useNavigate()
-  const [currentStep, setCurrentStep] = useState<VerificationStep>("voter-id")
-  const [voterId, setVoterId] = useState("")
+  const [currentStep, setCurrentStep] = useState<VerificationStep>("otp")
+  const [voterId, setVoterId] = useState("123456")
   const [fullName, setFullName] = useState("")
   const [dateOfBirth, setDateOfBirth] = useState("")
   const [faceImage, setFaceImage] = useState<string | null>(null)
   const [otp, setOtp] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [verifiedVoter, setVerifiedVoter] = useState<VoterInfo | null>(null)
+  const [identitySecret, setIdentitySecret] = useState<number | null>(null)
+  const [registrationData, setRegistrationData] = useState<any>(null)
 
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
@@ -40,7 +29,7 @@ export default function VerificationPage() {
   const detectionIntervalRef = useRef<number | null>(null)
 
   const steps = ["Voter ID", "Face Verification", "OTP Verification"]
-
+  const navigate = useNavigate()
   const stepIndex = steps.findIndex((step) => {
     if (step === "Voter ID") return currentStep === "voter-id"
     if (step === "Face Verification") return currentStep === "face"
@@ -74,10 +63,6 @@ export default function VerificationPage() {
       })
 
       if (response.data.success) {
-        // Store verified voter data for passing to voting page
-        setVerifiedVoter(response.data.data)
-        // Store voterID in localStorage as backup
-        localStorage.setItem('votingVoterID', voterId)
         alert("Voter ID verified successfully!")
         setCurrentStep("face")
       }
@@ -100,7 +85,7 @@ export default function VerificationPage() {
     }
 
     setLoading(true)
-    
+
     try {
       // Step 1: Face verification with Python backend
       console.log("Sending face image for verification:", { voter_id: voterId })
@@ -127,7 +112,7 @@ export default function VerificationPage() {
 
       // Step 2: If face verified, send OTP
       alert(`Face verified successfully! Similarity: ${(faceData.similarity * 100).toFixed(1)}%`)
-      
+
       const otpResponse = await axios.post(`http://localhost:8000/api/v1/voters/send-otp`, {
         voterID: voterId,
       })
@@ -164,17 +149,51 @@ export default function VerificationPage() {
       })
 
       if (response.data.success) {
-        alert("OTP verified successfully!")
-        // Navigate to voting page with voter data
-        navigate("/voting", { state: { voter: verifiedVoter } })
+        console.log("✅ OTP verified (testing mode)");
+
+
+        // Generate random identity secret
+        const generatedSecret = Math.floor(Math.random() * 1000000000);
+        setIdentitySecret(generatedSecret);
+        console.log("🔐 Generated Identity Secret:", generatedSecret);
+
+        // Generate commitment and add to merkle tree
+        const data = await generateCircuitInput(generatedSecret.toString());
+
+        console.log("✅ Registration data:", data);
+        setRegistrationData(data);
+
+        // Create downloadable JSON file with voter credentials
+        const voterCredentials = {
+          identitySecret: generatedSecret.toString(),
+          
+        };
+
+        // Auto-download the credentials file
+        const dataStr = JSON.stringify(voterCredentials, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `voter-credentials-${voterId}.json`;
+        link.click();
+        URL.revokeObjectURL(url);
+        alert(`Registration successful! Your identity secret is: ${generatedSecret}\n\nYour credentials have been downloaded. Keep them safe!`);
+        navigate("/")
       }
-    } catch (err: any) {
+     }
+
+    catch (err: any) {
       alert("OTP verification failed.")
       setError(err.response?.data?.message || "Verification failed. Please check your OTP and try again.")
     } finally {
       setLoading(false)
     }
+
   }
+
+
+
 
   // --- Camera start/stop & capture logic ---
   async function startCameraAndCaptureContinuously() {
