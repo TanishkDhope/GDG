@@ -33,6 +33,8 @@ const TestVoting = () => {
             // Generate circuit input locally in the frontend
             const data = await generateCircuitInput();
             setResult(data);
+            console.log(data.circuitInput)
+            
             const { proof, publicSignals } = await snarkjs.groth16.fullProve(
                 data.circuitInput,
                 "/voterCircuit.wasm",

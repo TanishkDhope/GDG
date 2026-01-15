@@ -28,7 +28,7 @@ function App() {
             <Route path="/verify" element={<VerificationPage />} />
             <Route path="/voting" element={<VotingPage />} />
             <Route path="/success" element={<SuccessPage />} />
-            <Route path="/test" element={<Test />} />
+            {/* <Route path="/test" element={<Test />} /> */}
             <Route path="/ballot" element={<BallotScanner />} />
             <Route path="/testVoting" element={<TestVoting/>}/>
           </Routes>
