@@ -41,21 +41,22 @@ contract ZKVoting {
         uint[2] calldata a,
         uint[2][2] calldata b,
         uint[2] calldata c,
-        uint[3] calldata input, // Changed from uint[1] to uint[3]: [merkle_root, election_id, nullifier]
+        uint[3] calldata input, // [merkle_root, nullifier, election_id] - as circuit outputs them
         uint256 candidate
     ) external {
         /*
+            Circuit outputs public signals in this order:
             input[0] = merkle_root (public input)
-            input[1] = election_id (public input)
-            input[2] = nullifier (public output)
+            input[1] = nullifier (public output) 
+            input[2] = election_id (public input)
         */
 
-        uint256 nullifier = input[2];
+        uint256 nullifier = input[1]; // Nullifier is at index 1
 
         // Check nullifier hasn't been used
         require(!nullifierUsed[nullifier], "Already voted");
 
-        // Verify the ZK proof - verifier expects all public signals: [merkle_root, election_id, nullifier]
+        // Verify the ZK proof - verifier expects signals in circuit's output order
         bool valid = verifier.verifyProof(a, b, c, input);
         require(valid, "Invalid ZK proof");
 
@@ -64,5 +65,21 @@ contract ZKVoting {
         votes[candidate]++;
 
         emit VoteCast(candidate, nullifier);
+    }
+
+    // Get vote count for a specific candidate
+    function getVotes(uint256 candidate) external view returns (uint256) {
+        return votes[candidate];
+    }
+
+    // Get vote counts for multiple candidates
+    function getVotesForCandidates(
+        uint256[] calldata candidateIds
+    ) external view returns (uint256[] memory) {
+        uint256[] memory voteCounts = new uint256[](candidateIds.length);
+        for (uint256 i = 0; i < candidateIds.length; i++) {
+            voteCounts[i] = votes[candidateIds[i]];
+        }
+        return voteCounts;
     }
 }
