@@ -25,14 +25,11 @@ const TestVoting = () => {
     const [candidateId, setCandidateId] = useState<string>('1');
     const [identitySecret, setIdentitySecret] = useState<string>('');
     const [txHash, setTxHash] = useState<`0x${string}` | undefined>(undefined);
-<<<<<<< HEAD
     const [merkleRootTxHash, setMerkleRootTxHash] = useState<`0x${string}` | undefined>(undefined);
     const [isUpdatingMerkleRoot, setIsUpdatingMerkleRoot] = useState(false);
 
     const { address } = useAccount();
-=======
     
->>>>>>> 8264eca6828b6053dcc270e01410cd032d321d1b
     const { writeContractAsync, isPending: isVoting } = useWriteContract();
     const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
         hash: txHash,
