@@ -10,6 +10,7 @@ import { useWriteContract, useWaitForTransactionReceipt, useAccount } from "wagm
 import { ZK_VOTING_ABI } from '@/abi/ZKVoting';
 import { ZK_VOTING_ADDRESS } from '@/config/contracts';
 import { v4 as uuidv4 } from 'uuid';
+import { loadLatestVoterCredentials } from '@/lib/identityStore';
 import axios from 'axios';
 
 import {
@@ -75,6 +76,37 @@ const TestVoting = () => {
             window.removeEventListener('offline', updateStatus);
         };
     }, []);
+    // load saved credentials from IndexedDB on mount
+useEffect(() => {
+  let mounted = true;
+  (async () => {
+    try {
+      const creds = await loadLatestVoterCredentials();
+      if (!mounted) return;
+      if (creds) {
+        setIdentitySecret(creds.identitySecret);
+        // show merkle + leaf on UI so user sees registration
+        setResult({
+          circuitInput: {
+            identity_secret: creds.identitySecret,
+            merkle_root: creds.merkleRoot,
+            election_id: creds.electionId ?? '1',
+            pathElements: creds.pathElements,
+            pathIndices: creds.pathIndices,
+          },
+          leafIndex: creds.leafIndex,
+          commitment: undefined,
+          totalVoters: undefined,
+        });
+        console.log('Loaded voter credentials from IndexedDB:', creds);
+      }
+    } catch (err) {
+      console.warn('Failed to load credentials from IndexedDB', err);
+    }
+  })();
+  return () => { mounted = false; };
+}, []);
+
 
     // Fetch candidates from backend
     useEffect(() => {
