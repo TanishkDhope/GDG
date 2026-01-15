@@ -3,7 +3,7 @@ import Navbar from '../components/Navbar';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { FileJson, Loader2, CheckCircle, Vote } from 'lucide-react';
-import { generateCircuitInput } from '../lib/circuitGenerator';
+import { generateCircuitInput, getVoterProof } from '../lib/circuitGenerator';
 import * as snarkjs from "snarkjs";
 import { useWriteContract, useWaitForTransactionReceipt, useAccount } from "wagmi";
 import { ZK_VOTING_ABI } from '@/abi/ZKVoting';
@@ -20,6 +20,7 @@ import {
 interface Candidate {
     _id: string;
     srNo: string;
+    candidateId: number;
     name: string;
     party: string;
     icon: string;
@@ -144,32 +145,6 @@ const TestVoting = () => {
             setResult(data);
             console.log(data.circuitInput)
 
-            // Update merkle root on contract if user is connected
-            if (address) {
-                try {
-                    setIsUpdatingMerkleRoot(true);
-                    console.log('Updating merkle root on contract:', data.merkle_root);
-
-                    // Convert merkle root string to bytes32
-                    const merkleRootBigInt = BigInt(data.merkle_root);
-                    const merkleRootBytes32 = '0x' + merkleRootBigInt.toString(16).padStart(64, '0') as `0x${string}`;
-
-                    const hash = await writeContractAsync({
-                        address: ZK_VOTING_ADDRESS as `0x${string}`,
-                        abi: ZK_VOTING_ABI,
-                        functionName: 'updateMerkleRoot',
-                        args: [merkleRootBytes32],
-                    });
-                    setMerkleRootTxHash(hash);
-                    console.log('✅ Merkle root updated on contract:', hash);
-                } catch (merkleErr: any) {
-                    console.error('Warning: Failed to update merkle root on contract:', merkleErr);
-                    // Don't throw - allow user to continue with proof generation
-                } finally {
-                    setIsUpdatingMerkleRoot(false);
-                }
-            }
-
             const { proof, publicSignals } = await snarkjs.groth16.fullProve(
                 data.circuitInput,
                 "/voterCircuit.wasm",
@@ -243,25 +218,77 @@ const TestVoting = () => {
     };
 
     const handleVote = async () => {
-        if (!proofData) {
-            setError('Please generate proof first');
+        if (!identitySecret || identitySecret.trim() === '') {
+            setError('Please enter your identity secret');
             return;
         }
 
+        if (!candidateId) {
+            setError('Please select a candidate');
+            return;
+        }
+
+        setIsGenerating(true);
+        setError(null);
+
         try {
-            setError(null);
-            console.log(proofData)
+            // Fetch existing voter proof (does NOT add to tree again)
+            console.log('🔍 Fetching voter proof...');
+            const data = await getVoterProof(identitySecret);
+
+            console.log('✅ Voter verified - generating ZK proof...');
+
+            // Generate ZK proof
+            const { proof, publicSignals } = await snarkjs.groth16.fullProve(
+                data.circuitInput,
+                "/voterCircuit.wasm",
+                "/voterCircuit_final.zkey"
+            );
+
+            console.log('✅ ZK Proof generated');
+            console.log('📊 Public Signals:', publicSignals);
+
+            // Export calldata
+            const calldata = await snarkjs.groth16.exportSolidityCallData(
+                proof,
+                publicSignals
+            );
+            const argv = JSON.parse("[" + calldata + "]");
+
+            const a = argv[0];
+            const b = argv[1];
+            const c = argv[2];
+            const input = argv[3];
+
+            console.log('📝 Calldata ready:', { a, b, c, input });
+
+            // Submit vote to blockchain
+            console.log('📤 Submitting vote to blockchain...');
             const hash = await writeContractAsync({
                 address: ZK_VOTING_ADDRESS as `0x${string}`,
                 abi: ZK_VOTING_ABI,
                 functionName: 'vote',
-                args: [proofData.a, proofData.b, proofData.c, proofData.input, BigInt(candidateId)],
+                args: [a, b, c, input, BigInt(candidateId)],
             });
+
             setTxHash(hash);
-            console.log('Vote transaction submitted:', hash);
+            console.log('✅ Vote submitted:', hash);
+
+            // Cache vote for offline sync
+            await cacheVote({
+                id: uuidv4(),
+                timestamp: Date.now(),
+                candidateId: candidateId.toString(),
+                electionId: data.election_id,
+                proofData: { a, b, c, input },
+                synced: true,
+            });
+
         } catch (err: any) {
             console.error('Voting error:', err);
-            setError(err.shortMessage || err.message || 'Failed to submit vote.');
+            setError(err.message || 'Failed to submit vote.');
+        } finally {
+            setIsGenerating(false);
         }
     };
 
@@ -309,15 +336,16 @@ const TestVoting = () => {
                                             <label
                                                 key={candidate._id}
                                                 className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${candidateId === candidate.srNo
-                                                        ? 'border-primary bg-primary/5'
-                                                        : 'border-border hover:border-primary/50'
+                                                    ? 'border-primary bg-primary/5'
+                                                    : 'border-border hover:border-primary/50'
                                                     }`}
                                             >
                                                 <input
                                                     type="radio"
                                                     name="candidate"
-                                                    value={candidate.srNo}
-                                                    checked={candidateId === candidate.srNo}
+
+                                                    value={candidate.candidateId}
+                                                    checked={candidateId === candidate.candidateId}
                                                     onChange={(e) => setCandidateId(e.target.value)}
                                                     className="w-4 h-4 text-primary"
                                                 />
@@ -338,6 +366,76 @@ const TestVoting = () => {
                                     </div>
                                 )}
                             </div>
+
+                            {/* Identity Secret Input */}
+                            <div className="bg-card border border-border rounded-xl p-6 space-y-4">
+                                <div>
+                                    <label className="text-sm font-medium mb-2 block">
+                                        Identity Secret
+                                    </label>
+                                    <Input
+                                        type="password"
+                                        value={identitySecret}
+                                        onChange={(e) => setIdentitySecret(e.target.value)}
+                                        placeholder="Enter your identity secret"
+                                        className="w-full font-mono"
+                                    />
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                        Enter the secret from your voter credentials file
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Error Display */}
+                            {error && (
+                                <div className="p-4 bg-destructive/10 border border-destructive/20 text-destructive rounded-xl text-sm">
+                                    {error}
+                                </div>
+                            )}
+
+                            {/* Vote Button */}
+                            <Button
+                                onClick={handleVote}
+                                disabled={isGenerating || isVoting || isConfirming || isConfirmed || !candidateId || !identitySecret}
+                                className="w-full font-semibold h-12 text-base"
+                            >
+                                {isGenerating ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                                        Generating Proof...
+                                    </>
+                                ) : isVoting ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                                        Confirm in Wallet...
+                                    </>
+                                ) : isConfirming ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                                        Confirming Transaction...
+                                    </>
+                                ) : isConfirmed ? (
+                                    <>
+                                        <CheckCircle className="mr-2 h-5 w-5" />
+                                        Vote Submitted!
+                                    </>
+                                ) : (
+                                    <>
+                                        <Vote className="mr-2 h-5 w-5" />
+                                        Submit Vote
+                                    </>
+                                )}
+                            </Button>
+
+                            {/* Success Display */}
+                            {isConfirmed && txHash && (
+                                <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-xl">
+                                    <p className="text-sm font-semibold text-green-600 mb-2">Vote Successfully Cast!</p>
+                                    <p className="text-xs text-muted-foreground break-all">
+                                        Transaction: {txHash}
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </section>

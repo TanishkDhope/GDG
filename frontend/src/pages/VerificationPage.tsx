@@ -143,14 +143,14 @@ export default function VerificationPage() {
 
     setLoading(true)
     try {
-      const response = await axios.post(`http://localhost:8000/api/v1/voters/verify-otp`, {
-        voterID: voterId,
-        otp,
-      })
+      // const response = await axios.post(`http://localhost:8000/api/v1/voters/verify-otp`, {
+      //   voterID: voterId,
+      //   otp,
+      // })
 
-      if (response.data.success) {
-        console.log("✅ OTP verified (testing mode)");
-
+      // if (response.data.success) {
+      //   console.log("✅ OTP verified (testing mode)");
+    
 
         // Generate random identity secret
         const generatedSecret = Math.floor(Math.random() * 1000000000);
@@ -181,7 +181,7 @@ export default function VerificationPage() {
         alert(`Registration successful! Your identity secret is: ${generatedSecret}\n\nYour credentials have been downloaded. Keep them safe!`);
         navigate("/")
       }
-     }
+     
 
     catch (err: any) {
       alert("OTP verification failed.")

@@ -128,3 +128,88 @@ export async function generateCircuitInput(userSecret?: string) {
         throw new Error(error.message || "Failed to generate circuit input");
     }
 }
+
+/**
+ * Fetch existing voter proof data from Merkle tree (for voting)
+ * Does NOT add commitment to tree - only retrieves existing proof
+ */
+export async function getVoterProof(userSecret: string) {
+    const poseidon = await buildPoseidon();
+
+    // 🔐 Identity secret (PRIVATE)
+    const identity_secret = BigInt(userSecret);
+
+    console.log("Identity Secret:", identity_secret.toString());
+
+    // Commitment = Poseidon(secret)
+    const commitment = poseidon([identity_secret]);
+    const commitmentStr = poseidon.F.toObject(commitment).toString();
+
+    console.log("Commitment:", commitmentStr);
+
+    // 🌐 Fetch proof data from backend merkle tree
+    const electionId = 1;
+
+    try {
+        const response = await fetch(`${API_URL}/merkle-tree/${electionId}/proof/${commitmentStr}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (!response.ok) {
+            const contentType = response.headers.get("content-type");
+            let errorMessage = `Server error: ${response.status}`;
+
+            if (contentType && contentType.includes("application/json")) {
+                const error = await response.json();
+                errorMessage = error.message || errorMessage;
+            } else {
+                const text = await response.text();
+                console.error("Server returned non-JSON response:", text.substring(0, 200));
+                errorMessage = `Server error: ${response.status}. Voter not found or backend not running.`;
+            }
+            throw new Error(errorMessage);
+        }
+
+        const data = await response.json();
+        const proofData = data.data;
+
+        console.log("✅ Voter proof retrieved from merkle tree");
+        console.log("Merkle Root:", proofData.merkleRoot);
+        console.log("Path Elements:", proofData.pathElements);
+
+        // 🗳️ Election ID
+        const election_id = BigInt(electionId);
+
+        // Calculate nullifier for display (circuit will compute it internally)
+        const nullifier = poseidon([identity_secret, election_id]);
+        const nullifierStr = poseidon.F.toObject(nullifier).toString();
+
+        // 🎯 Final circuit input
+        const circuitInput = {
+            identity_secret: identity_secret.toString(),
+            pathElements: proofData.pathElements,
+            pathIndices: proofData.pathIndices,
+            merkle_root: proofData.merkleRoot,
+            election_id: election_id.toString(),
+        };
+
+        console.log("\n✅ Circuit input prepared for voting");
+        console.log("Nullifier (computed by circuit):", nullifierStr);
+        console.log(JSON.stringify(circuitInput, null, 2));
+
+        return {
+            success: true,
+            commitment: commitmentStr,
+            merkle_root: proofData.merkleRoot,
+            election_id: election_id.toString(),
+            nullifier: nullifierStr,
+            circuitInput
+        };
+    } catch (error: any) {
+        console.error("Error fetching voter proof:", error);
+        throw new Error(error.message || "Failed to fetch voter proof. Make sure you're registered.");
+    }
+}
