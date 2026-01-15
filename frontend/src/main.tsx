@@ -21,26 +21,36 @@ if (typeof global === 'undefined') {
 const originalError = console.error;
 const originalWarn = console.warn;
 
-console.error = (...args) => {
-  const message = JSON.stringify(args);
-  // Filter out token-related RPC errors
-  if (message.includes('0x313ce567') || // decimals()
-    message.includes('0x95d89b41') || // symbol()
-    message.includes('0x01ffc9a7') || // supportsInterface()
-    message.includes('execution reverted')) {
-    return;
+const shouldSuppress = (args: any[]) => {
+  try {
+    const message = args.map(arg =>
+      typeof arg === 'string' ? arg :
+        typeof arg === 'object' ? JSON.stringify(arg, (_, v) => typeof v === 'bigint' ? v.toString() : v) :
+          String(arg)
+    ).join(' ');
+
+    return (
+      message.includes('0x313ce567') ||    // decimals()
+      message.includes('0x95d89b41') ||    // symbol()
+      message.includes('0x01ffc9a7') ||    // supportsInterface()
+      message.includes('80ac58cd') ||      // ERC721 interface ID
+      message.includes('execution reverted') ||
+      message.includes('EthCall') ||
+      message.includes('RPC request failed') ||
+      message.includes('eth_call')
+    );
+  } catch {
+    return false;
   }
+};
+
+console.error = (...args) => {
+  if (shouldSuppress(args)) return;
   originalError.apply(console, args);
 };
 
 console.warn = (...args) => {
-  const message = JSON.stringify(args);
-  if (message.includes('0x313ce567') ||
-    message.includes('0x95d89b41') ||
-    message.includes('0x01ffc9a7') ||
-    message.includes('execution reverted')) {
-    return;
-  }
+  if (shouldSuppress(args)) return;
   originalWarn.apply(console, args);
 };
 

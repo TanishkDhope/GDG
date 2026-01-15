@@ -77,35 +77,35 @@ const TestVoting = () => {
         };
     }, []);
     // load saved credentials from IndexedDB on mount
-useEffect(() => {
-  let mounted = true;
-  (async () => {
-    try {
-      const creds = await loadLatestVoterCredentials();
-      if (!mounted) return;
-      if (creds) {
-        setIdentitySecret(creds.identitySecret);
-        // show merkle + leaf on UI so user sees registration
-        setResult({
-          circuitInput: {
-            identity_secret: creds.identitySecret,
-            merkle_root: creds.merkleRoot,
-            election_id: creds.electionId ?? '1',
-            pathElements: creds.pathElements,
-            pathIndices: creds.pathIndices,
-          },
-          leafIndex: creds.leafIndex,
-          commitment: undefined,
-          totalVoters: undefined,
-        });
-        console.log('Loaded voter credentials from IndexedDB:', creds);
-      }
-    } catch (err) {
-      console.warn('Failed to load credentials from IndexedDB', err);
-    }
-  })();
-  return () => { mounted = false; };
-}, []);
+    useEffect(() => {
+        let mounted = true;
+        (async () => {
+            try {
+                const creds = await loadLatestVoterCredentials();
+                if (!mounted) return;
+                if (creds) {
+                    setIdentitySecret(creds.identitySecret);
+                    // show merkle + leaf on UI so user sees registration
+                    setResult({
+                        circuitInput: {
+                            identity_secret: creds.identitySecret,
+                            merkle_root: creds.merkleRoot,
+                            election_id: creds.electionId ?? '1',
+                            pathElements: creds.pathElements,
+                            pathIndices: creds.pathIndices,
+                        },
+                        leafIndex: creds.leafIndex,
+                        commitment: undefined,
+                        totalVoters: undefined,
+                    });
+                    console.log('Loaded voter credentials from IndexedDB:', creds);
+                }
+            } catch (err) {
+                console.warn('Failed to load credentials from IndexedDB', err);
+            }
+        })();
+        return () => { mounted = false; };
+    }, []);
 
 
     // Fetch candidates from backend
@@ -150,7 +150,8 @@ useEffect(() => {
                 await markVoteSynced(vote.id);
                 console.log('Vote synced:', txHash);
             } catch (err) {
-                console.error('Failed to sync vote:', vote.id, err);
+                const errorMsg = err instanceof Error ? err.message : String(err);
+                console.error('Failed to sync vote:', vote.id, errorMsg);
             }
         }
     };

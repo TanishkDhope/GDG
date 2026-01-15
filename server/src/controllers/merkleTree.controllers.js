@@ -117,15 +117,35 @@ const getProof = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Commitment not found in tree");
   }
 
+  // IMPORTANT: Recompute proof from scratch to ensure consistency
+  const poseidon = await buildPoseidon();
+  const tree = new MerkleTree(20, poseidon);
+
+  // Rebuild tree with all commitments in order
+  for (const c of treeData.commitments) {
+    tree.insert(BigInt(c.commitment));
+  }
+
+  // Get fresh proof for this commitment
+  const freshProof = tree.getProof(commitmentData.leafIndex);
+  const freshMerkleRoot = tree.root().toString();
+
+  console.log("📋 getProof Debug:");
+  console.log("  - Commitment:", commitment);
+  console.log("  - Leaf Index:", commitmentData.leafIndex);
+  console.log("  - Stored Merkle Root:", treeData.merkleRoot);
+  console.log("  - Computed Merkle Root:", freshMerkleRoot);
+  console.log("  - Roots Match:", treeData.merkleRoot === freshMerkleRoot);
+
   return res.status(200).json(
     new ApiResponse(
       200,
       {
         commitment: commitmentData.commitment,
         leafIndex: commitmentData.leafIndex,
-        merkleRoot: treeData.merkleRoot,
-        pathElements: commitmentData.pathElements,
-        pathIndices: commitmentData.pathIndices,
+        merkleRoot: freshMerkleRoot,
+        pathElements: freshProof.pathElements.map(el => el.toString()),
+        pathIndices: freshProof.pathIndices.map(idx => idx.toString()),
         electionId: treeData.electionId,
       },
       "Merkle proof retrieved"
