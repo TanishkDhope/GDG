@@ -6,6 +6,7 @@ import voterRouter from "./routes/voters.routes.js";
 import cookieParser from "cookie-parser";
 import candidateRouter from "./routes/candidates.routes.js";
 import merkleTreeRouter from "./routes/merkleTree.routes.js";
+import complaintRouter from "./routes/complaints.routes.js";
 
 const app = express();
 
@@ -29,6 +30,7 @@ app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/voters", voterRouter);
 app.use("/api/v1/candidates", candidateRouter);
 app.use("/api/v1/merkle-tree", merkleTreeRouter);
+app.use("/api/v1/complaints", complaintRouter);
 app.get('/', (req, res) => {
   res.send("Welcome to my Project")
 })

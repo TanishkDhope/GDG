@@ -1,45 +1,42 @@
 "use client"
 
 import { FormEvent } from "react"
-
 import { useState } from "react"
 import { Header } from "@/components/Header"
 import { Footer } from "@/components/Footer"
 import { CardContainer } from "@/components/Card-Container"
+import axios from "axios"
+import { Loader2 } from "lucide-react"
+
+const API_BASE = "http://localhost:8000/api/v1"
 
 interface Complaint {
-  id: string
+  _id: string
   voterId: string
   category: string
   description: string
   status: "submitted" | "under-review" | "resolved"
-  submittedAt: string
+  adminResponse: string
+  createdAt: string
+  resolvedAt: string | null
 }
 
 export default function HelpPage() {
-  const [activeTab, setActiveTab] = useState<"faq" | "complaint">("faq")
+  const [activeTab, setActiveTab] = useState<"faq" | "complaint" | "track">("faq")
+  
+  // Complaint form state
   const [voterId, setVoterId] = useState("")
   const [category, setCategory] = useState("technical")
   const [description, setDescription] = useState("")
+  const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
-  const [complaints, setComplaints] = useState<Complaint[]>([
-    {
-      id: "1",
-      voterId: "ABC1234567",
-      category: "face-verification",
-      description: "Face verification failed multiple times",
-      status: "under-review",
-      submittedAt: "2025-01-12",
-    },
-    {
-      id: "2",
-      voterId: "XYZ9876543",
-      category: "otp",
-      description: "Did not receive OTP on registered mobile number",
-      status: "resolved",
-      submittedAt: "2025-01-11",
-    },
-  ])
+  const [error, setError] = useState<string | null>(null)
+  
+  // Track complaints state
+  const [trackVoterId, setTrackVoterId] = useState("")
+  const [trackedComplaints, setTrackedComplaints] = useState<Complaint[]>([])
+  const [tracking, setTracking] = useState(false)
+  const [hasSearched, setHasSearched] = useState(false)
 
   const faqs = [
     {
@@ -74,31 +71,62 @@ export default function HelpPage() {
     },
   ]
 
-  const handleSubmitComplaint = (e: FormEvent) => {
+  const handleSubmitComplaint = async (e: FormEvent) => {
     e.preventDefault()
+    setError(null)
+    
     if (!voterId.trim() || !description.trim()) {
-      alert("Please fill in all fields")
+      setError("Please fill in all required fields")
       return
     }
 
-    const newComplaint: Complaint = {
-      id: Math.random().toString(),
-      voterId,
-      category,
-      description,
-      status: "submitted",
-      submittedAt: new Date().toISOString().split("T")[0],
+    setSubmitting(true)
+    try {
+      const response = await axios.post(`${API_BASE}/complaints`, {
+        voterId,
+        category,
+        description
+      })
+
+      if (response.data.success) {
+        setVoterId("")
+        setCategory("technical")
+        setDescription("")
+        setSubmitted(true)
+
+        setTimeout(() => {
+          setSubmitted(false)
+        }, 5000)
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Failed to submit complaint. Please try again.")
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleTrackComplaints = async (e: FormEvent) => {
+    e.preventDefault()
+    setError(null)
+    
+    if (!trackVoterId.trim()) {
+      setError("Please enter your Voter ID")
+      return
     }
 
-    setComplaints([newComplaint, ...complaints])
-    setVoterId("")
-    setCategory("technical")
-    setDescription("")
-    setSubmitted(true)
-
-    setTimeout(() => {
-      setSubmitted(false)
-    }, 5000)
+    setTracking(true)
+    setHasSearched(true)
+    try {
+      const response = await axios.get(`${API_BASE}/complaints/voter/${trackVoterId.toUpperCase()}`)
+      if (response.data.success) {
+        setTrackedComplaints(response.data.data)
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Failed to fetch complaints")
+      setTrackedComplaints([])
+    } finally {
+      setTracking(false)
+    }
   }
 
   const getStatusColor = (status: string) => {
@@ -157,6 +185,16 @@ export default function HelpPage() {
             >
               Report Issue
             </button>
+            <button
+              onClick={() => setActiveTab("track")}
+              className={`px-4 py-3 font-semibold border-b-2 transition-colors ${
+                activeTab === "track"
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Track Status
+            </button>
           </div>
 
           {/* FAQ Section */}
@@ -181,19 +219,27 @@ export default function HelpPage() {
                 {submitted && (
                   <div className="mb-6 bg-green-50 border border-green-300 rounded-lg p-4">
                     <p className="text-green-800 font-semibold">✓ Complaint submitted successfully!</p>
-                    <p className="text-green-700 text-sm">We will review your issue and contact you soon.</p>
+                    <p className="text-green-700 text-sm">We will review your issue and contact you soon. You can track your complaint status using the "Track Status" tab.</p>
+                  </div>
+                )}
+
+                {error && (
+                  <div className="mb-6 bg-red-50 border border-red-300 rounded-lg p-4">
+                    <p className="text-red-800 font-semibold">Error</p>
+                    <p className="text-red-700 text-sm">{error}</p>
                   </div>
                 )}
 
                 <form onSubmit={handleSubmitComplaint} className="space-y-6">
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">Voter ID</label>
+                    <label className="block text-sm font-medium text-foreground mb-2">Voter ID *</label>
                     <input
                       type="text"
                       value={voterId}
                       onChange={(e) => setVoterId(e.target.value.toUpperCase())}
                       placeholder="e.g., ABC1234567"
                       className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                      required
                     />
                   </div>
 
@@ -214,55 +260,129 @@ export default function HelpPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-foreground mb-2">Description</label>
+                    <label className="block text-sm font-medium text-foreground mb-2">Description *</label>
                     <textarea
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
-                      placeholder="Please describe the issue you encountered..."
+                      placeholder="Please describe the issue you encountered in detail..."
                       rows={5}
                       className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                      required
                     ></textarea>
                   </div>
 
                   <button
                     type="submit"
-                    className="w-full px-4 py-3 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 transition-colors"
+                    disabled={submitting}
+                    className="w-full px-4 py-3 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
-                    Submit Complaint
+                    {submitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Submitting...
+                      </>
+                    ) : (
+                      "Submit Complaint"
+                    )}
+                  </button>
+                </form>
+              </CardContainer>
+            </div>
+          )}
+
+          {/* Track Status Section */}
+          {activeTab === "track" && (
+            <div className="space-y-8">
+              <CardContainer>
+                <h2 className="text-2xl font-bold text-foreground mb-6">Track Your Complaints</h2>
+                <p className="text-muted-foreground mb-6">Enter your Voter ID to view the status of your submitted complaints.</p>
+
+                {error && (
+                  <div className="mb-6 bg-red-50 border border-red-300 rounded-lg p-4">
+                    <p className="text-red-700 text-sm">{error}</p>
+                  </div>
+                )}
+
+                <form onSubmit={handleTrackComplaints} className="flex gap-4">
+                  <input
+                    type="text"
+                    value={trackVoterId}
+                    onChange={(e) => setTrackVoterId(e.target.value.toUpperCase())}
+                    placeholder="Enter your Voter ID"
+                    className="flex-1 px-4 py-2 border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                    required
+                  />
+                  <button
+                    type="submit"
+                    disabled={tracking}
+                    className="px-6 py-2 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {tracking ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Searching...
+                      </>
+                    ) : (
+                      "Search"
+                    )}
                   </button>
                 </form>
               </CardContainer>
 
-              {/* Submitted Complaints */}
-              <div>
-                <h2 className="text-2xl font-bold text-foreground mb-6">Your Complaints</h2>
-                <div className="space-y-4">
-                  {complaints.length === 0 ? (
-                    <CardContainer>
-                      <p className="text-muted-foreground text-center py-8">No complaints submitted yet</p>
-                    </CardContainer>
-                  ) : (
-                    complaints.map((complaint) => (
-                      <CardContainer key={complaint.id}>
-                        <div className="flex items-start justify-between mb-4">
-                          <div>
-                            <h3 className="font-semibold text-foreground mb-1">{complaint.category}</h3>
-                            <p className="text-sm text-muted-foreground">Submitted on {complaint.submittedAt}</p>
-                          </div>
-                          <span
-                            className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(
-                              complaint.status,
-                            )}`}
-                          >
-                            {getStatusIcon(complaint.status)} {complaint.status}
-                          </span>
-                        </div>
-                        <p className="text-foreground">{complaint.description}</p>
+              {/* Tracked Complaints Results */}
+              {hasSearched && (
+                <div>
+                  <h3 className="text-xl font-bold text-foreground mb-4">
+                    {trackedComplaints.length > 0 
+                      ? `Found ${trackedComplaints.length} complaint(s) for ${trackVoterId}`
+                      : `No complaints found for ${trackVoterId}`
+                    }
+                  </h3>
+                  <div className="space-y-4">
+                    {trackedComplaints.length === 0 ? (
+                      <CardContainer>
+                        <p className="text-muted-foreground text-center py-8">
+                          No complaints found for this Voter ID. If you have submitted a complaint recently, please check back later.
+                        </p>
                       </CardContainer>
-                    ))
-                  )}
+                    ) : (
+                      trackedComplaints.map((complaint) => (
+                        <CardContainer key={complaint._id}>
+                          <div className="flex items-start justify-between mb-4">
+                            <div>
+                              <h3 className="font-semibold text-foreground mb-1 capitalize">
+                                {complaint.category.replace("-", " ")}
+                              </h3>
+                              <p className="text-sm text-muted-foreground">
+                                Submitted on {new Date(complaint.createdAt).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <span
+                              className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(complaint.status)}`}
+                            >
+                              {getStatusIcon(complaint.status)} {complaint.status.replace("-", " ")}
+                            </span>
+                          </div>
+                          <p className="text-foreground mb-4">{complaint.description}</p>
+                          
+                          {complaint.adminResponse && (
+                            <div className="mt-4 pt-4 border-t border-border">
+                              <p className="text-sm font-medium text-muted-foreground mb-2">Admin Response:</p>
+                              <p className="text-foreground bg-muted/30 p-3 rounded-lg">{complaint.adminResponse}</p>
+                            </div>
+                          )}
+                          
+                          {complaint.resolvedAt && (
+                            <p className="text-sm text-green-600 mt-3">
+                              ✓ Resolved on {new Date(complaint.resolvedAt).toLocaleDateString()}
+                            </p>
+                          )}
+                        </CardContainer>
+                      ))
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           )}
         </div>
