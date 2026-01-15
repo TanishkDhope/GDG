@@ -12,6 +12,7 @@ import { ZK_VOTING_ADDRESS } from '@/config/contracts';
 import { v4 as uuidv4 } from 'uuid';
 import { loadLatestVoterCredentials } from '@/lib/identityStore';
 import axios from 'axios';
+import { parseContractError } from '@/lib/utils';
 
 import {
     cacheVote,
@@ -51,8 +52,8 @@ const TestVoting = () => {
 
     const { address } = useAccount();
 
-    const { writeContractAsync, isPending: isVoting } = useWriteContract();
-    const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
+    const { writeContractAsync, isPending: isVoting, error: writeError } = useWriteContract();
+    const { isLoading: isConfirming, isSuccess: isConfirmed, isError: isTxError, error: txError } = useWaitForTransactionReceipt({
         hash: txHash,
         query: { enabled: !!txHash }
     });
@@ -60,6 +61,20 @@ const TestVoting = () => {
         hash: merkleRootTxHash,
         query: { enabled: !!merkleRootTxHash }
     });
+
+    // Handle transaction errors from useWaitForTransactionReceipt
+    useEffect(() => {
+        if (isTxError && txError) {
+            setError(parseContractError(txError));
+        }
+    }, [isTxError, txError]);
+
+    // Handle write contract errors  
+    useEffect(() => {
+        if (writeError) {
+            setError(parseContractError(writeError));
+        }
+    }, [writeError]);
 
     // Handle online/offline status
     useEffect(() => {
@@ -151,8 +166,9 @@ const TestVoting = () => {
                 await markVoteSynced(vote.id);
                 console.log('Vote synced:', txHash);
             } catch (err) {
-                const errorMsg = err instanceof Error ? err.message : String(err);
+                const errorMsg = parseContractError(err);
                 console.error('Failed to sync vote:', vote.id, errorMsg);
+                setError(`Sync failed: ${errorMsg}`);
             }
         }
     };
@@ -245,7 +261,7 @@ const TestVoting = () => {
 
         } catch (err: any) {
             console.error('Error generating input:', err);
-            setError(err.message || 'Failed to generate circuit input.');
+            setError(parseContractError(err));
         } finally {
             setIsGenerating(false);
         }
@@ -320,7 +336,7 @@ const TestVoting = () => {
 
         } catch (err: any) {
             console.error('Voting error:', err);
-            setError(err.message || 'Failed to submit vote.');
+            setError(parseContractError(err));
         } finally {
             setIsGenerating(false);
         }

@@ -6,8 +6,8 @@ import { Footer } from "@/components/Footer"
 import { CardContainer } from "@/components/Card-Container"
 import { usePublicClient, useBlockNumber, useChainId, useWatchContractEvent } from "wagmi"
 import { getAddress, formatEther } from "viem"
-import { BALLOT_CONTRACT_ADDRESS } from "@/config/contracts"
-import { BALLOT_ABI } from "@/abi/ballot"
+import { ZK_VOTING_ADDRESS } from "@/config/contracts"
+import { ZK_VOTING_ABI } from "@/abi/ZKVoting"
 import {
     Activity,
     ShieldCheck,
@@ -32,19 +32,17 @@ import { Link } from "react-router-dom"
 interface VoteEvent {
     id: string
     candidateId: bigint
-    token: string
+    nullifier: string
     timestamp: number
 }
 
 // Candidates for internal logic (summing votes), but not displayed individually
 const CANDIDATES = [
-    { id: "1", name: "Rajesh Kumar", party: "National Progressive Party", partySymbol: "🌾" },
-    { id: "2", name: "Priya Sharma", party: "Democratic Alliance", partySymbol: "🏛️" },
-    { id: "3", name: "Arjun Singh", party: "People's United Front", partySymbol: "⭐" },
-    { id: "4", name: "Meera Patel", party: "Inclusive Growth Movement", partySymbol: "🤝" },
+    { id: "0", name: "Rajesh Kumar", party: "National Progressive Party", partySymbol: "🌾" },
+    { id: "1", name: "Priya Sharma", party: "Democratic Alliance", partySymbol: "🏛️" },
+    { id: "2", name: "Arjun Singh", party: "People's United Front", partySymbol: "⭐" },
+    { id: "3", name: "Meera Patel", party: "Inclusive Growth Movement", partySymbol: "🤝" },
 ]
-
-const BASELINE_VOTES = 500000
 
 export default function ResultsPage() {
     const publicClient = usePublicClient()
@@ -66,11 +64,8 @@ export default function ResultsPage() {
     const containerRef = useRef<HTMLDivElement>(null)
     const feedRef = useRef<HTMLDivElement>(null)
 
-    // Derived Stats
-    const isReleased = releaseTime !== null && Date.now() >= releaseTime;
-    const displayTotalVotes = isReleased ? Number(totalVotes) : BASELINE_VOTES // Show baseline until release? Or just hide stats? User said "release the standings".
-    // Actually, usually total votes might be visible, but breakdown hidden. Let's hide detailed breakdown until release.
-    // User: "count the votes... and then release the standings"
+    // Always show actual verified votes from blockchain
+    const displayTotalVotes = Number(totalVotes)
 
     const maleVotes = Math.round(displayTotalVotes * 0.52)
     const femaleVotes = Math.round(displayTotalVotes * 0.46)
@@ -109,12 +104,12 @@ export default function ResultsPage() {
             let total = 0n
             const results = []
 
-            // Get real on-chain total by summing candidates
+            // Get real on-chain total by summing candidates from ZKVoting contract
             for (const c of CANDIDATES) {
                 try {
                     const voteCount = await publicClient.readContract({
-                        address: getAddress(BALLOT_CONTRACT_ADDRESS),
-                        abi: BALLOT_ABI,
+                        address: getAddress(ZK_VOTING_ADDRESS),
+                        abi: ZK_VOTING_ABI,
                         functionName: 'getVotes',
                         args: [BigInt(c.id)],
                     }) as bigint
@@ -122,6 +117,7 @@ export default function ResultsPage() {
                     results.push({ ...c, votes: voteCount })
                 } catch (readErr) {
                     console.warn(`DEBUG: Error reading votes for candidate ${c.id}:`, readErr)
+                    results.push({ ...c, votes: 0n })
                 }
             }
 
@@ -130,7 +126,7 @@ export default function ResultsPage() {
             // Fetch contract balance (transparency)
             try {
                 const balance = await publicClient.getBalance({
-                    address: getAddress(BALLOT_CONTRACT_ADDRESS),
+                    address: getAddress(ZK_VOTING_ADDRESS),
                 })
                 setContractBalance(formatEther(balance))
             } catch (balErr) {
@@ -148,18 +144,18 @@ export default function ResultsPage() {
         }
     }
 
-    // Watch for new votes
+    // Watch for new votes from ZKVoting contract
     useWatchContractEvent({
-        address: getAddress(BALLOT_CONTRACT_ADDRESS),
-        abi: BALLOT_ABI,
+        address: getAddress(ZK_VOTING_ADDRESS),
+        abi: ZK_VOTING_ABI,
         eventName: 'VoteCast',
         onLogs(logs) {
             console.log("DEBUG: VoteCast Event Received", logs);
             fetchResults()
             const newEvents = logs.map(log => ({
                 id: log.transactionHash as string,
-                candidateId: (log as any).args.candidateId,
-                token: (log as any).args.token,
+                candidateId: (log as any).args.candidate,
+                nullifier: (log as any).args.nullifier?.toString() || '',
                 timestamp: Date.now()
             }))
             setRecentVotes(prev => [...newEvents, ...prev].slice(0, 10))
@@ -169,22 +165,22 @@ export default function ResultsPage() {
         },
     })
 
-    // Fetch history
+    // Fetch history from ZKVoting contract
     useEffect(() => {
         const fetchHistory = async () => {
             if (!publicClient) return
             try {
                 const logs = await publicClient.getContractEvents({
-                    address: getAddress(BALLOT_CONTRACT_ADDRESS),
-                    abi: BALLOT_ABI,
+                    address: getAddress(ZK_VOTING_ADDRESS),
+                    abi: ZK_VOTING_ABI,
                     eventName: 'VoteCast',
                     fromBlock: 'earliest'
                 })
 
                 const history = logs.map(log => ({
                     id: log.transactionHash as string,
-                    candidateId: (log as any).args.candidateId,
-                    token: (log as any).args.token,
+                    candidateId: (log as any).args.candidate,
+                    nullifier: (log as any).args.nullifier?.toString() || '',
                     timestamp: Date.now() // Ideally block timestamp
                 })).reverse()
 
@@ -280,7 +276,7 @@ export default function ResultsPage() {
                         )}
                     </div>
 
-                    {/* Results / Standings Section */}
+                    {/* Results / Standings Section
                     {isReleased ? (
                         <div className="mb-16 animate-in fade-in zoom-in duration-500">
                             <div className="text-center mb-8">
@@ -323,7 +319,7 @@ export default function ResultsPage() {
                                 )}
                             </div>
                         </div>
-                    )}
+                    )} */}
 
 
                     {/* KPI Grid */}
@@ -364,7 +360,7 @@ export default function ResultsPage() {
                         </CardContainer>
 
                         {/* Contract Status */}
-                        <a href={`https://sepolia.etherscan.io/address/${BALLOT_CONTRACT_ADDRESS}`}
+                        <a href={`https://sepolia.etherscan.io/address/${ZK_VOTING_ADDRESS}`}
                             target="_blank"
                             rel="noreferrer">
                             <CardContainer className="stat-card border-border/50 hover:cursor-pointer">
@@ -384,7 +380,7 @@ export default function ResultsPage() {
                                 <div className="space-y-1 ">
                                     <p className="text-xs font-medium text-muted-foreground">Smart Contract</p>
                                     <p className="text-sm font-bold font-mono text-foreground truncate">
-                                        {BALLOT_CONTRACT_ADDRESS}
+                                        {ZK_VOTING_ADDRESS}
                                     </p>
                                 </div>
                                 <div className="mt-4 flex  justify-between items-end">
@@ -393,7 +389,7 @@ export default function ResultsPage() {
                                         <p className="text-sm font-bold text-foreground">{contractBalance} ETH</p>
                                     </div>
                                     <a
-                                        href={`https://sepolia.etherscan.io/address/${BALLOT_CONTRACT_ADDRESS}`}
+                                        href={`https://sepolia.etherscan.io/address/${ZK_VOTING_ADDRESS}`}
                                         target="_blank"
                                         rel="noreferrer"
                                         className="p-2 hover:bg-muted rounded-lg transition-colors"
