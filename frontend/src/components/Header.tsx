@@ -27,12 +27,12 @@ export function Header({ showNav = true }: HeaderProps) {
 
           {showNav && (
             <nav className="flex items-center gap-6">
-              <button
+              {/* <button
                 onClick={() => navigate("/")}
                 className="text-sm font-medium text-foreground hover:text-primary transition-colors"
               >
                 Home
-              </button>
+              </button> */}
               <button
                 onClick={() => navigate("/candidates")}
                 className="text-sm font-medium text-foreground hover:text-primary transition-colors"
