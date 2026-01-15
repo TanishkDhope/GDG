@@ -538,3 +538,165 @@ AttributeError: 'Request' object has no attribute 'body'
 >>>>>>> 3cc8435ebaf3f9bd0471202a596821ffb44ebddd
 =======
 >>>>>>> 3cc8435ebaf3f9bd0471202a596821ffb44ebddd
+2026-01-15 11:19:02,658 - __main__ - INFO - Connecting to MongoDB at None
+2026-01-15 11:19:02,723 - __main__ - INFO - Connected to database 'gdghackathon', collection 'voters'
+2026-01-15 11:19:02,727 - __main__ - INFO - Starting Voter Verification Service on port 5000
+2026-01-15 11:19:02,728 - __main__ - INFO - Configuration:
+2026-01-15 11:19:02,728 - __main__ - INFO -   - MongoDB URI: None
+2026-01-15 11:19:02,729 - __main__ - INFO -   - Database: gdghackathon
+2026-01-15 11:19:02,729 - __main__ - INFO -   - Collection: voters
+2026-01-15 11:19:02,729 - __main__ - INFO -   - Temp Directory: /tmp/voter_verification
+2026-01-15 11:19:02,862 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.1.6:5000
+2026-01-15 11:19:02,862 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-01-15 11:19:02,862 - werkzeug - INFO -  * Restarting with stat
+2026-01-15 11:19:13,211 - __main__ - INFO - Connecting to MongoDB at mongodb+srv://sanskar007:yehaipassword@cluster0.qsr4wap.mongodb.net/gdghackathon
+2026-01-15 11:19:13,606 - __main__ - INFO - Connected to database 'gdghackathon', collection 'voters'
+2026-01-15 11:19:13,607 - __main__ - INFO - Starting Voter Verification Service on port 8000
+2026-01-15 11:19:13,607 - __main__ - INFO - Configuration:
+2026-01-15 11:19:13,607 - __main__ - INFO -   - MongoDB URI: mongodb+srv://sanskar007:yehaipassword@cluster0.qsr4wap.mongodb.net/gdghackathon
+2026-01-15 11:19:13,607 - __main__ - INFO -   - Database: gdghackathon
+2026-01-15 11:19:13,607 - __main__ - INFO -   - Collection: voters
+2026-01-15 11:19:13,607 - __main__ - INFO -   - Temp Directory: /tmp/voter_verification
+2026-01-15 11:19:13,636 - werkzeug - WARNING -  * Debugger is active!
+2026-01-15 11:19:13,648 - werkzeug - INFO -  * Debugger PIN: 118-068-492
+2026-01-15 11:20:28,496 - werkzeug - INFO - 127.0.0.1 - - [15/Jan/2026 11:20:28] "OPTIONS /verify HTTP/1.1" 200 -
+2026-01-15 11:20:28,748 - __main__ - INFO - ==================================================
+2026-01-15 11:20:28,748 - __main__ - INFO - STARTING VERIFICATION REQUEST
+2026-01-15 11:20:28,751 - __main__ - INFO - Request method: POST
+2026-01-15 11:20:28,751 - __main__ - INFO - Content-Type: application/json
+2026-01-15 11:20:28,751 - __main__ - INFO - Content-Length: 83185
+2026-01-15 11:20:28,751 - __main__ - INFO - Raw data preview: {"voter_id":"INDVOT900101","image":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+2026-01-15 11:20:28,751 - __main__ - INFO - Parsed JSON keys: ['voter_id', 'image']
+2026-01-15 11:20:28,751 - __main__ - INFO - Final extracted - Voter ID: INDVOT900101
+2026-01-15 11:20:28,755 - __main__ - INFO - Image data present: True
+2026-01-15 11:20:28,755 - __main__ - INFO - Image data type: <class 'str'>
+2026-01-15 11:20:28,755 - __main__ - INFO - Image data starts with: data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD...
+2026-01-15 11:20:28,755 - __main__ - INFO - Image data is base64: True
+2026-01-15 11:20:28,755 - __main__ - INFO - Step 1: Fetching registered image...
+2026-01-15 11:20:28,755 - __main__ - INFO - Looking up registered image for voter ID: INDVOT900101
+2026-01-15 11:20:29,051 - __main__ - INFO - Found voter document. Name: Tanvi Khadatkar
+2026-01-15 11:20:29,051 - __main__ - INFO - Profile data - localPath: public/images/voters/tanvi.jpeg, URL present: True
+2026-01-15 11:20:29,051 - __main__ - INFO - Trying resolved path: C:\Users\Tanvi Khadatkar\GDG\server\public/images/voters/tanvi.jpeg
+2026-01-15 11:20:29,051 - __main__ - INFO - Using local path: C:\Users\Tanvi Khadatkar\GDG\server\public/images/voters/tanvi.jpeg
+2026-01-15 11:20:29,051 - __main__ - INFO - Local file size: 16549 bytes
+2026-01-15 11:20:29,051 - __main__ - INFO - Registered image path: C:\Users\Tanvi Khadatkar\GDG\server\public/images/voters/tanvi.jpeg
+2026-01-15 11:20:29,051 - __main__ - INFO - Voter name: Tanvi Khadatkar
+2026-01-15 11:20:29,051 - __main__ - INFO - Step 2: Processing captured image...
+2026-01-15 11:20:29,051 - __main__ - INFO - Image data is in data:image format
+2026-01-15 11:20:29,058 - __main__ - INFO - Saving captured image to: /tmp/voter_verification\capture_INDVOT900101_20260115_112029.jpg
+2026-01-15 11:20:29,059 - __main__ - INFO - Saving base64 image to: /tmp/voter_verification\capture_INDVOT900101_20260115_112029.jpg
+2026-01-15 11:20:29,063 - __main__ - INFO - Base64 image saved successfully. File size: 62343 bytes
+2026-01-15 11:20:29,063 - __main__ - INFO - Captured image saved. Size: 62343 bytes
+2026-01-15 11:20:29,063 - __main__ - INFO - Step 3: Comparing faces...
+2026-01-15 11:20:29,063 - __main__ - INFO - ===== DEBUG IMAGES =====
+2026-01-15 11:20:29,065 - __main__ - INFO - Registered image path: C:\Users\Tanvi Khadatkar\GDG\server\public/images/voters/tanvi.jpeg
+2026-01-15 11:20:29,065 - __main__ - INFO - Registered image size: 16549 bytes
+2026-01-15 11:20:29,065 - __main__ - INFO - Captured image path: /tmp/voter_verification\capture_INDVOT900101_20260115_112029.jpg
+2026-01-15 11:20:29,065 - __main__ - INFO - Captured image size: 62343 bytes
+2026-01-15 11:20:29,065 - __main__ - INFO - ======================
+2026-01-15 11:20:29,065 - __main__ - INFO - Starting face comparison: C:\Users\Tanvi Khadatkar\GDG\server\public/images/voters/tanvi.jpeg vs /tmp/voter_verification\capture_INDVOT900101_20260115_112029.jpg
+2026-01-15 11:20:29,065 - __main__ - INFO - Threshold set to: 0.4
+2026-01-15 11:20:29,065 - __main__ - INFO - Attempting face comparison with Facenet512 model...
+2026-01-15 11:20:39,301 - __main__ - INFO - DeepFace Result - Distance: 0.2308, Similarity: 0.8846, Matched: True
+2026-01-15 11:20:39,303 - __main__ - INFO - Comparison complete. Match: True, Similarity: 88.46%
+2026-01-15 11:20:39,304 - __main__ - INFO - Step 4: Cleaning up temporary files...
+2026-01-15 11:20:39,304 - __main__ - INFO - Removed captured temp file: /tmp/voter_verification\capture_INDVOT900101_20260115_112029.jpg
+2026-01-15 11:20:39,304 - __main__ - INFO - Verification complete in 10.55 seconds
+2026-01-15 11:20:39,305 - __main__ - INFO - Result - Verified: True, Similarity: 88.46%
+2026-01-15 11:20:39,305 - __main__ - INFO - Sending response to client
+2026-01-15 11:20:39,306 - werkzeug - INFO - 127.0.0.1 - - [15/Jan/2026 11:20:39] "POST /verify HTTP/1.1" 200 -
+2026-01-15 11:21:02,653 - werkzeug - INFO - 127.0.0.1 - - [15/Jan/2026 11:21:02] "OPTIONS /verify HTTP/1.1" 200 -
+2026-01-15 11:21:02,901 - __main__ - INFO - ==================================================
+2026-01-15 11:21:02,901 - __main__ - INFO - STARTING VERIFICATION REQUEST
+2026-01-15 11:21:02,901 - __main__ - INFO - Request method: POST
+2026-01-15 11:21:02,901 - __main__ - INFO - Content-Type: application/json
+2026-01-15 11:21:02,901 - __main__ - INFO - Content-Length: 73801
+2026-01-15 11:21:02,906 - __main__ - INFO - Raw data preview: {"voter_id":"INDVOT900101","image":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+2026-01-15 11:21:02,906 - __main__ - INFO - Parsed JSON keys: ['voter_id', 'image']
+2026-01-15 11:21:02,906 - __main__ - INFO - Final extracted - Voter ID: INDVOT900101
+2026-01-15 11:21:02,906 - __main__ - INFO - Image data present: True
+2026-01-15 11:21:02,906 - __main__ - INFO - Image data type: <class 'str'>
+2026-01-15 11:21:02,906 - __main__ - INFO - Image data starts with: data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD...
+2026-01-15 11:21:02,906 - __main__ - INFO - Image data is base64: True
+2026-01-15 11:21:02,906 - __main__ - INFO - Step 1: Fetching registered image...
+2026-01-15 11:21:02,906 - __main__ - INFO - Looking up registered image for voter ID: INDVOT900101
+2026-01-15 11:21:02,911 - __main__ - INFO - Found voter document. Name: Tanvi Khadatkar
+2026-01-15 11:21:02,911 - __main__ - INFO - Profile data - localPath: public/images/voters/tanvi.jpeg, URL present: True
+2026-01-15 11:21:02,911 - __main__ - INFO - Trying resolved path: C:\Users\Tanvi Khadatkar\GDG\server\public/images/voters/tanvi.jpeg
+2026-01-15 11:21:02,926 - __main__ - INFO - Using local path: C:\Users\Tanvi Khadatkar\GDG\server\public/images/voters/tanvi.jpeg
+2026-01-15 11:21:02,926 - __main__ - INFO - Local file size: 16549 bytes
+2026-01-15 11:21:02,926 - __main__ - INFO - Registered image path: C:\Users\Tanvi Khadatkar\GDG\server\public/images/voters/tanvi.jpeg
+2026-01-15 11:21:02,926 - __main__ - INFO - Voter name: Tanvi Khadatkar
+2026-01-15 11:21:02,926 - __main__ - INFO - Step 2: Processing captured image...
+2026-01-15 11:21:02,926 - __main__ - INFO - Image data is in data:image format
+2026-01-15 11:21:02,926 - __main__ - INFO - Saving captured image to: /tmp/voter_verification\capture_INDVOT900101_20260115_112102.jpg
+2026-01-15 11:21:02,926 - __main__ - INFO - Saving base64 image to: /tmp/voter_verification\capture_INDVOT900101_20260115_112102.jpg
+2026-01-15 11:21:02,931 - __main__ - INFO - Base64 image saved successfully. File size: 55303 bytes
+2026-01-15 11:21:02,931 - __main__ - INFO - Captured image saved. Size: 55303 bytes
+2026-01-15 11:21:02,931 - __main__ - INFO - Step 3: Comparing faces...
+2026-01-15 11:21:02,934 - __main__ - INFO - ===== DEBUG IMAGES =====
+2026-01-15 11:21:02,934 - __main__ - INFO - Registered image path: C:\Users\Tanvi Khadatkar\GDG\server\public/images/voters/tanvi.jpeg
+2026-01-15 11:21:02,934 - __main__ - INFO - Registered image size: 16549 bytes
+2026-01-15 11:21:02,934 - __main__ - INFO - Captured image path: /tmp/voter_verification\capture_INDVOT900101_20260115_112102.jpg
+2026-01-15 11:21:02,934 - __main__ - INFO - Captured image size: 55303 bytes
+2026-01-15 11:21:02,934 - __main__ - INFO - ======================
+2026-01-15 11:21:02,934 - __main__ - INFO - Starting face comparison: C:\Users\Tanvi Khadatkar\GDG\server\public/images/voters/tanvi.jpeg vs /tmp/voter_verification\capture_INDVOT900101_20260115_112102.jpg
+2026-01-15 11:21:02,934 - __main__ - INFO - Threshold set to: 0.4
+2026-01-15 11:21:02,934 - __main__ - INFO - Attempting face comparison with Facenet512 model...
+2026-01-15 11:21:04,351 - __main__ - INFO - DeepFace Result - Distance: 0.6505, Similarity: 0.6748, Matched: False
+2026-01-15 11:21:04,351 - __main__ - INFO - Comparison complete. Match: False, Similarity: 67.48%
+2026-01-15 11:21:04,351 - __main__ - INFO - Step 4: Cleaning up temporary files...
+2026-01-15 11:21:04,351 - __main__ - INFO - Removed captured temp file: /tmp/voter_verification\capture_INDVOT900101_20260115_112102.jpg
+2026-01-15 11:21:04,356 - __main__ - INFO - Verification complete in 1.46 seconds
+2026-01-15 11:21:04,356 - __main__ - INFO - Result - Verified: False, Similarity: 67.48%
+2026-01-15 11:21:04,356 - __main__ - INFO - Sending response to client
+2026-01-15 11:21:04,358 - werkzeug - INFO - 127.0.0.1 - - [15/Jan/2026 11:21:04] "POST /verify HTTP/1.1" 200 -
+2026-01-15 11:22:13,501 - werkzeug - INFO - 127.0.0.1 - - [15/Jan/2026 11:22:13] "OPTIONS /verify HTTP/1.1" 200 -
+2026-01-15 11:22:13,761 - __main__ - INFO - ==================================================
+2026-01-15 11:22:13,761 - __main__ - INFO - STARTING VERIFICATION REQUEST
+2026-01-15 11:22:13,761 - __main__ - INFO - Request method: POST
+2026-01-15 11:22:13,761 - __main__ - INFO - Content-Type: application/json
+2026-01-15 11:22:13,761 - __main__ - INFO - Content-Length: 79841
+2026-01-15 11:22:13,761 - __main__ - INFO - Raw data preview: {"voter_id":"INDVOT900101","image":"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+2026-01-15 11:22:13,761 - __main__ - INFO - Parsed JSON keys: ['voter_id', 'image']
+2026-01-15 11:22:13,761 - __main__ - INFO - Final extracted - Voter ID: INDVOT900101
+2026-01-15 11:22:13,761 - __main__ - INFO - Image data present: True
+2026-01-15 11:22:13,766 - __main__ - INFO - Image data type: <class 'str'>
+2026-01-15 11:22:13,766 - __main__ - INFO - Image data starts with: data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD...
+2026-01-15 11:22:13,766 - __main__ - INFO - Image data is base64: True
+2026-01-15 11:22:13,766 - __main__ - INFO - Step 1: Fetching registered image...
+2026-01-15 11:22:13,766 - __main__ - INFO - Looking up registered image for voter ID: INDVOT900101
+2026-01-15 11:22:13,776 - __main__ - INFO - Found voter document. Name: Tanvi Khadatkar
+2026-01-15 11:22:13,779 - __main__ - INFO - Profile data - localPath: public/images/voters/tanvi.jpeg, URL present: True
+2026-01-15 11:22:13,779 - __main__ - INFO - Trying resolved path: C:\Users\Tanvi Khadatkar\GDG\server\public/images/voters/tanvi.jpeg
+2026-01-15 11:22:13,779 - __main__ - INFO - Using local path: C:\Users\Tanvi Khadatkar\GDG\server\public/images/voters/tanvi.jpeg
+2026-01-15 11:22:13,779 - __main__ - INFO - Local file size: 16549 bytes
+2026-01-15 11:22:13,779 - __main__ - INFO - Registered image path: C:\Users\Tanvi Khadatkar\GDG\server\public/images/voters/tanvi.jpeg
+2026-01-15 11:22:13,781 - __main__ - INFO - Voter name: Tanvi Khadatkar
+2026-01-15 11:22:13,781 - __main__ - INFO - Step 2: Processing captured image...
+2026-01-15 11:22:13,781 - __main__ - INFO - Image data is in data:image format
+2026-01-15 11:22:13,781 - __main__ - INFO - Saving captured image to: /tmp/voter_verification\capture_INDVOT900101_20260115_112213.jpg
+2026-01-15 11:22:13,781 - __main__ - INFO - Saving base64 image to: /tmp/voter_verification\capture_INDVOT900101_20260115_112213.jpg
+2026-01-15 11:22:13,785 - __main__ - INFO - Base64 image saved successfully. File size: 59834 bytes
+2026-01-15 11:22:13,786 - __main__ - INFO - Captured image saved. Size: 59834 bytes
+2026-01-15 11:22:13,786 - __main__ - INFO - Step 3: Comparing faces...
+2026-01-15 11:22:13,786 - __main__ - INFO - ===== DEBUG IMAGES =====
+2026-01-15 11:22:13,786 - __main__ - INFO - Registered image path: C:\Users\Tanvi Khadatkar\GDG\server\public/images/voters/tanvi.jpeg
+2026-01-15 11:22:13,788 - __main__ - INFO - Registered image size: 16549 bytes
+2026-01-15 11:22:13,788 - __main__ - INFO - Captured image path: /tmp/voter_verification\capture_INDVOT900101_20260115_112213.jpg
+2026-01-15 11:22:13,788 - __main__ - INFO - Captured image size: 59834 bytes
+2026-01-15 11:22:13,788 - __main__ - INFO - ======================
+2026-01-15 11:22:13,788 - __main__ - INFO - Starting face comparison: C:\Users\Tanvi Khadatkar\GDG\server\public/images/voters/tanvi.jpeg vs /tmp/voter_verification\capture_INDVOT900101_20260115_112213.jpg
+2026-01-15 11:22:13,791 - __main__ - INFO - Threshold set to: 0.4
+2026-01-15 11:22:13,791 - __main__ - INFO - Attempting face comparison with Facenet512 model...
+2026-01-15 11:22:15,231 - __main__ - INFO - DeepFace Result - Distance: 0.1869, Similarity: 0.9065, Matched: True
+2026-01-15 11:22:15,231 - __main__ - INFO - Comparison complete. Match: True, Similarity: 90.65%
+2026-01-15 11:22:15,231 - __main__ - INFO - Step 4: Cleaning up temporary files...
+2026-01-15 11:22:15,231 - __main__ - INFO - Removed captured temp file: /tmp/voter_verification\capture_INDVOT900101_20260115_112213.jpg
+2026-01-15 11:22:15,231 - __main__ - INFO - Verification complete in 1.47 seconds
+2026-01-15 11:22:15,231 - __main__ - INFO - Result - Verified: True, Similarity: 90.65%
+2026-01-15 11:22:15,231 - __main__ - INFO - Sending response to client
+2026-01-15 11:22:15,236 - werkzeug - INFO - 127.0.0.1 - - [15/Jan/2026 11:22:15] "POST /verify HTTP/1.1" 200 -
