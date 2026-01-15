@@ -106,6 +106,8 @@ export default function VotingPage() {
     }
   }
 
+  
+
   // Voting Receipt View
   if (isConfirmed) {
     return (
