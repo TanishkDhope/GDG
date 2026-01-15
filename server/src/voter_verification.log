@@ -535,6 +535,11 @@ AttributeError: 'Request' object has no attribute 'body'
 2026-01-15 10:25:41,052 - werkzeug - WARNING -  * Debugger is active!
 2026-01-15 10:25:41,054 - werkzeug - INFO -  * Debugger PIN: 293-896-761
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 3cc8435ebaf3f9bd0471202a596821ffb44ebddd
+=======
+>>>>>>> 302680ebd29d820c93fd49eaa71b8f3d65930009
 >>>>>>> 3cc8435ebaf3f9bd0471202a596821ffb44ebddd
 =======
 >>>>>>> 3cc8435ebaf3f9bd0471202a596821ffb44ebddd
