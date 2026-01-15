@@ -194,8 +194,10 @@ export default function ResultsPage() {
         }
     }, [blockNumber]);
 
+    const a = 1;
     // Auto-scroll visualizer
     useEffect(() => {
+        
         const container = document.getElementById('block-chain-container');
         if (container) {
             container.scrollLeft = container.scrollWidth;
