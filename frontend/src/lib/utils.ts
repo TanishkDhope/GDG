@@ -13,10 +13,10 @@ export function parseContractError(error: unknown): string {
   if (!error) return 'Unknown error';
 
   const err = error as Record<string, unknown>;
-  
+
   // First, try to extract revert reason from anywhere in the error
   const errorStr = JSON.stringify(error, (_, v) => typeof v === 'bigint' ? v.toString() : v);
-  
+
   // Look for common revert patterns in the entire error object
   const revertPatterns = [
     /reverted with:?\s*"?([^"}\]]+)"?/i,
@@ -24,7 +24,7 @@ export function parseContractError(error: unknown): string {
     /revert\s+([^"}\]]+)/i,
     /"reason":\s*"([^"]+)"/i,
   ];
-  
+
   for (const pattern of revertPatterns) {
     const match = errorStr.match(pattern);
     if (match && match[1] && match[1].trim().length > 0 && match[1].trim() !== 'null') {
@@ -66,7 +66,7 @@ export function parseContractError(error: unknown): string {
 
     // Try metaMessages array (viem specific)
     if (Array.isArray(err.metaMessages) && err.metaMessages.length > 0) {
-      const relevantMsg = err.metaMessages.find((m: string) => 
+      const relevantMsg = err.metaMessages.find((m: string) =>
         !m.includes('Contract Call') && !m.includes('Request Arguments')
       );
       if (relevantMsg) return relevantMsg;
@@ -81,8 +81,8 @@ export function parseContractError(error: unknown): string {
   }
 
   // Check for UserRejectedRequestError
-  if (err.name === 'UserRejectedRequestError' || 
-      (typeof err.message === 'string' && err.message.includes('User rejected'))) {
+  if (err.name === 'UserRejectedRequestError' ||
+    (typeof err.message === 'string' && err.message.includes('User rejected'))) {
     return 'Transaction rejected by user';
   }
 

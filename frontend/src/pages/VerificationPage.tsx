@@ -13,7 +13,7 @@ import { saveVoterCredentials } from '@/lib/identityStore';
 type VerificationStep = "voter-id" | "face" | "otp"
 
 export default function VerificationPage() {
-  const [currentStep, setCurrentStep] = useState<VerificationStep>("otp")
+  const [currentStep, setCurrentStep] = useState<VerificationStep>("voter-id")
   const [voterId, setVoterId] = useState("123456")
   const [fullName, setFullName] = useState("")
   const [dateOfBirth, setDateOfBirth] = useState("")
@@ -31,6 +31,7 @@ export default function VerificationPage() {
 
   const steps = ["Voter ID", "Face Verification", "OTP Verification"]
   const navigate = useNavigate()
+
   const stepIndex = steps.findIndex((step) => {
     if (step === "Voter ID") return currentStep === "voter-id"
     if (step === "Face Verification") return currentStep === "face"
@@ -154,42 +155,42 @@ export default function VerificationPage() {
 
       if (response.data.success) {
         console.log("✅ OTP verified (testing mode)");
-    
 
-        // Generate random identity secret
-        const generatedSecret = Math.floor(Math.random() * 1000000000);
-        setIdentitySecret(generatedSecret);
-        console.log("🔐 Generated Identity Secret:", generatedSecret);
 
-        // Generate commitment and add to merkle tree
-        const data = await generateCircuitInput(generatedSecret.toString());
+      // Generate random identity secret
+      const generatedSecret = Math.floor(Math.random() * 1000000000);
+      setIdentitySecret(generatedSecret);
+      console.log("🔐 Generated Identity Secret:", generatedSecret);
 
-        console.log("✅ Registration data:", data);
-        setRegistrationData(data);
+      // Generate commitment and add to merkle tree
+      const data = await generateCircuitInput(generatedSecret.toString());
 
-        // Create downloadable JSON file with voter credentials
-        const voterCredentials = {
-          identitySecret: generatedSecret.toString(),
-          
-        };
+      console.log("✅ Registration data:", data);
+      setRegistrationData(data);
 
-        // Auto-download the credentials file
-        const dataStr = JSON.stringify(voterCredentials, null, 2);
-        const dataBlob = new Blob([dataStr], { type: 'application/json' });
-        const url = URL.createObjectURL(dataBlob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `voter-credentials-${voterId}.json`;
-        link.click();
-        URL.revokeObjectURL(url);
-        alert(`Registration successful! Your identity secret is: ${generatedSecret}\n\nYour credentials have been downloaded. Keep them safe!`);
-        navigate("/")
-        localStorage.setItem('voterRegistered', 'true');
-   localStorage.setItem('voterId', voterId);
-      }
+      // Create downloadable JSON file with voter credentials
+      const voterCredentials = {
+        identitySecret: generatedSecret.toString(),
+
+      };
+
+      // Auto-download the credentials file
+      const dataStr = JSON.stringify(voterCredentials, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(dataBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `voter-credentials-${voterId}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+      alert(`Registration successful! Your identity secret is: ${generatedSecret}\n\nYour credentials have been downloaded. Keep them safe!`);
+      navigate("/")
+      localStorage.setItem('voterRegistered', 'true');
+      localStorage.setItem('voterId', voterId);
     }
+
   }
-  
+}
     catch (err: any) {
       alert("OTP verification failed.")
       setError(err.response?.data?.message || "Verification failed. Please check your OTP and try again.")
@@ -197,52 +198,52 @@ export default function VerificationPage() {
       setLoading(false)
     }
     // inside handleOtpSubmit after OTP verification succeeded
-// --- generate cryptographically secure secret (browser) ---
-const bytes = new Uint8Array(31);
-window.crypto.getRandomValues(bytes);
-const hex = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
-const generatedSecret = BigInt('0x' + hex).toString(); // string
+    // --- generate cryptographically secure secret (browser) ---
+    const bytes = new Uint8Array(31);
+    window.crypto.getRandomValues(bytes);
+    const hex = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+    const generatedSecret = BigInt('0x' + hex).toString(); // string
 
-setIdentitySecret(Number(generatedSecret)); // optional UI
-console.log("🔐 Generated Identity Secret:", generatedSecret);
+    setIdentitySecret(Number(generatedSecret)); // optional UI
+    console.log("🔐 Generated Identity Secret:", generatedSecret);
 
-// Generate commitment and merkle data (your existing function)
-const data = await generateCircuitInput(generatedSecret.toString());
+    // Generate commitment and merkle data (your existing function)
+    const data = await generateCircuitInput(generatedSecret.toString());
 
-console.log("✅ Registration data:", data);
-setRegistrationData(data);
+    console.log("✅ Registration data:", data);
+    setRegistrationData(data);
 
-// Build voter credentials object
-const voterCredentials = {
-  identitySecret: generatedSecret.toString(),
-  merkleRoot: data.merkle_root ?? data.circuitInput?.merkle_root,
-  leafIndex: data.leafIndex ?? data.circuitInput?.leafIndex ?? 0,
-  pathElements: data.circuitInput?.pathElements ?? data.pathElements ?? [],
-  pathIndices: data.circuitInput?.pathIndices ?? data.pathIndices ?? [],
-  electionId: data.circuitInput?.election_id ?? data.election_id ?? '1',
-  registeredAt: new Date().toISOString(),
-};
+    // Build voter credentials object
+    const voterCredentials = {
+      identitySecret: generatedSecret.toString(),
+      merkleRoot: data.merkle_root ?? data.circuitInput?.merkle_root,
+      leafIndex: data.leafIndex ?? data.circuitInput?.leafIndex ?? 0,
+      pathElements: data.circuitInput?.pathElements ?? data.pathElements ?? [],
+      pathIndices: data.circuitInput?.pathIndices ?? data.pathIndices ?? [],
+      electionId: data.circuitInput?.election_id ?? data.election_id ?? '1',
+      registeredAt: new Date().toISOString(),
+    };
 
-// Save immediately to IndexedDB
-try {
-  await saveVoterCredentials(voterCredentials);
-  console.log('✅ Voter credentials saved to IndexedDB');
-} catch (err) {
-  console.error('Failed to save credentials to IndexedDB', err);
-}
+    // Save immediately to IndexedDB
+    try {
+      await saveVoterCredentials(voterCredentials);
+      console.log('✅ Voter credentials saved to IndexedDB');
+    } catch (err) {
+      console.error('Failed to save credentials to IndexedDB', err);
+    }
 
-// Optional: still offer a downloaded file for the user
-const dataStr = JSON.stringify(voterCredentials, null, 2);
-const dataBlob = new Blob([dataStr], { type: 'application/json' });
-const url = URL.createObjectURL(dataBlob);
-const link = document.createElement('a');
-link.href = url;
-link.download = `voter-credentials-${voterId}.json`;
-link.click();
-URL.revokeObjectURL(url);
+    // Optional: still offer a downloaded file for the user
+    const dataStr = JSON.stringify(voterCredentials, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `voter-credentials-${voterId}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
 
-alert(`Registration successful! Your identity secret is saved locally and downloaded. Keep the downloaded file safe!`);
-navigate("/");
+    alert(`Registration successful! Your identity secret is saved locally and downloaded. Keep the downloaded file safe!`);
+    navigate("/");
 
 
   }
