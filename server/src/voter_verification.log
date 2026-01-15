@@ -192,6 +192,7 @@ AttributeError: 'Request' object has no attribute 'body'
 2026-01-15 08:04:57,541 - __main__ - ERROR - No registered image found for voter ID: INDVOT900101
 2026-01-15 08:04:57,541 - werkzeug - INFO - 127.0.0.1 - - [15/Jan/2026 08:04:57] "POST /verify HTTP/1.1" 200 -
 <<<<<<< HEAD
+<<<<<<< HEAD
 2026-01-15 09:33:46,678 - __main__ - INFO - Connecting to MongoDB at None
 2026-01-15 09:33:46,733 - __main__ - INFO - Connected to database 'gdghackathon', collection 'voters'
 2026-01-15 09:33:46,735 - __main__ - INFO - Starting Voter Verification Service on port 5000
@@ -277,6 +278,8 @@ AttributeError: 'Request' object has no attribute 'body'
 2026-01-15 09:38:47,588 - __main__ - ERROR - No registered image found for voter ID: INDVOT900101
 2026-01-15 09:38:47,589 - werkzeug - INFO - 127.0.0.1 - - [15/Jan/2026 09:38:47] "POST /verify HTTP/1.1" 200 -
 =======
+=======
+>>>>>>> 3cc8435ebaf3f9bd0471202a596821ffb44ebddd
 2026-01-15 09:54:48,503 - __main__ - INFO - Connecting to MongoDB at None
 2026-01-15 09:54:48,508 - __main__ - INFO - Connected to database 'gdghackathon', collection 'voters'
 2026-01-15 09:54:48,509 - __main__ - INFO - Starting Voter Verification Service on port 5000
@@ -531,4 +534,7 @@ AttributeError: 'Request' object has no attribute 'body'
 2026-01-15 10:25:41,033 - __main__ - INFO -   - Temp Directory: /tmp/voter_verification
 2026-01-15 10:25:41,052 - werkzeug - WARNING -  * Debugger is active!
 2026-01-15 10:25:41,054 - werkzeug - INFO -  * Debugger PIN: 293-896-761
+<<<<<<< HEAD
+>>>>>>> 3cc8435ebaf3f9bd0471202a596821ffb44ebddd
+=======
 >>>>>>> 3cc8435ebaf3f9bd0471202a596821ffb44ebddd
