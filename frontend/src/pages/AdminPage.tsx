@@ -7,7 +7,7 @@ import { CardContainer } from "@/components/Card-Container"
 import axios from "axios"
 import { Loader2, X, MessageSquare, RefreshCw } from "lucide-react"
 
-const API_BASE = "http://localhost:8000/api/v1"
+const API_BASE = "gdg-backend-hfnlry93o-tanishks-projects-9d31ddd5.vercel.app:8000/api/v1"
 
 interface Complaint {
   _id: string

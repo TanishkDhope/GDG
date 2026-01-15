@@ -37,7 +37,7 @@ interface FilterOptions {
   wards: string[]
 }
 
-const API_BASE = "http://localhost:8000/api/v1"
+const API_BASE = "gdg-backend-hfnlry93o-tanishks-projects-9d31ddd5.vercel.app/api/v1"
 
 export default function CandidatesPage() {
   // Filter states

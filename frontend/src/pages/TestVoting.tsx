@@ -129,7 +129,7 @@ const TestVoting = () => {
         const fetchCandidates = async () => {
             setLoadingCandidates(true);
             try {
-                const response = await axios.get('http://localhost:8000/api/v1/candidates');
+                const response = await axios.get('gdg-backend-hfnlry93o-tanishks-projects-9d31ddd5.vercel.app:8000/api/v1/candidates');
                 setCandidates(response.data.data || []);
                 console.log('Candidates loaded:', response.data.data);
             } catch (err) {

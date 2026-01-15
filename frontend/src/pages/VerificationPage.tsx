@@ -58,7 +58,7 @@ export default function VerificationPage() {
 
     setLoading(true)
     try {
-      const response = await axios.post(`http://localhost:8000/api/v1/voters/verify`, {
+      const response = await axios.post(`gdg-backend-hfnlry93o-tanishks-projects-9d31ddd5.vercel.app:8000/api/v1/voters/verify`, {
         voterID: voterId,
         fullName,
         dateOfBirth,
@@ -91,7 +91,7 @@ export default function VerificationPage() {
     try {
       // Step 1: Face verification with Python backend
       console.log("Sending face image for verification:", { voter_id: voterId })
-      const faceResponse = await fetch("http://localhost:5000/verify", {
+      const faceResponse = await fetch("gdg-backend-hfnlry93o-tanishks-projects-9d31ddd5.vercel.app:5000/verify", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -145,7 +145,7 @@ export default function VerificationPage() {
 
     setLoading(true)
     try {
-      const response = await axios.post(`http://localhost:8000/api/v1/voters/verify-otp`, {
+      const response = await axios.post(`gdg-backend-hfnlry93o-tanishks-projects-9d31ddd5.vercel.app/api/v1/voters/verify-otp`, {
         voterID: voterId,
         otp,
       })

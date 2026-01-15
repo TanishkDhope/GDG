@@ -17,7 +17,7 @@ export default function AdminLogin() {
 
     setLoading(true)
     try {
-      const res = await axios.post("http://localhost:8000/api/v1/auth/login", {
+      const res = await axios.post("gdg-backend-hfnlry93o-tanishks-projects-9d31ddd5.vercel.app/api/v1/auth/login", {
         email,
         password,
       }, {
