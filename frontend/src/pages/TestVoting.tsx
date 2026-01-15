@@ -331,21 +331,7 @@ const TestVoting = () => {
             <Header showNav={false} />
 
             <main className="flex-1">
-                {/* Hero Section */}
-                <section className="bg-gradient-to-br from-primary/5 to-accent/5 border-b border-border py-16 md:py-24">
-                    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                        <div className="text-center">
-                            <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">Test Voting Circuit</h1>
-                            <p className="text-xl text-muted-foreground mb-4 max-w-2xl mx-auto">
-                                Generate test circuit inputs for zero-knowledge proof verification
-                            </p>
-                            <p className="text-base text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-                                Click the button below to generate input.json with Merkle tree proofs and voter credentials.
-                            </p>
-                        </div>
-                    </div>
-                </section>
-
+          
                 {/* Main Content Section */}
                 <section className="py-16 md:py-24">
                     <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">

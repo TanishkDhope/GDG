@@ -13,7 +13,7 @@ import { saveVoterCredentials } from '@/lib/identityStore';
 type VerificationStep = "voter-id" | "face" | "otp"
 
 export default function VerificationPage() {
-  const [currentStep, setCurrentStep] = useState<VerificationStep>("otp")
+  const [currentStep, setCurrentStep] = useState<VerificationStep>("voter-id")
   const [voterId, setVoterId] = useState("123456")
   const [fullName, setFullName] = useState("")
   const [dateOfBirth, setDateOfBirth] = useState("")
@@ -144,16 +144,16 @@ export default function VerificationPage() {
 
     setLoading(true)
     try {
-      // const response = await axios.post(`http://localhost:8000/api/v1/voters/verify-otp`, {
-      //   voterID: voterId,
-      //   otp,
-      // })
+      const response = await axios.post(`http://localhost:8000/api/v1/voters/verify-otp`, {
+        voterID: voterId,
+        otp,
+      })
 
-      // if (response.data.success) {
-      //   console.log("✅ OTP verified (testing mode)");
+      if (response.data.success) {
+        console.log("✅ OTP verified (testing mode)");
 
-      // if (response.data.success) {
-      //   console.log("✅ OTP verified (testing mode)");
+      if (response.data.success) {
+        console.log("✅ OTP verified (testing mode)");
     
 
         // Generate random identity secret
@@ -187,8 +187,9 @@ export default function VerificationPage() {
         localStorage.setItem('voterRegistered', 'true');
    localStorage.setItem('voterId', voterId);
       }
-     
-
+    
+    }
+  }
     catch (err: any) {
       alert("OTP verification failed.")
       setError(err.response?.data?.message || "Verification failed. Please check your OTP and try again.")
