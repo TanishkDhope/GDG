@@ -19,9 +19,17 @@ import {
 
 interface Candidate {
     _id: string;
+    srNo: string;
     name: string;
     party: string;
-    candidateId: number;
+    icon: string;
+    education: string;
+    legalHistory?: {
+        pendingCases: number;
+        convictions: number;
+    };
+    isReservedSeat: boolean;
+    reservedCategory: string;
 }
 
 const TestVoting = () => {
@@ -300,7 +308,7 @@ const TestVoting = () => {
                                         {candidates.map((candidate) => (
                                             <label
                                                 key={candidate._id}
-                                                className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${candidateId === candidate.candidateId.toString()
+                                                className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${candidateId === candidate.srNo
                                                         ? 'border-primary bg-primary/5'
                                                         : 'border-border hover:border-primary/50'
                                                     }`}
@@ -308,17 +316,22 @@ const TestVoting = () => {
                                                 <input
                                                     type="radio"
                                                     name="candidate"
-                                                    value={candidate.candidateId}
-                                                    checked={candidateId === candidate.candidateId.toString()}
+                                                    value={candidate.srNo}
+                                                    checked={candidateId === candidate.srNo}
                                                     onChange={(e) => setCandidateId(e.target.value)}
                                                     className="w-4 h-4 text-primary"
                                                 />
-                                                <div className="flex-1">
-                                                    <p className="font-semibold text-foreground">{candidate.name}</p>
-                                                    <p className="text-sm text-muted-foreground">{candidate.party}</p>
+                                                <div className="flex items-center gap-3 flex-1">
+                                                    <div className="w-10 h-10 rounded-full bg-amber-400 flex items-center justify-center text-xl">
+                                                        {candidate.icon || "👤"}
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <p className="font-semibold text-foreground">{candidate.name}</p>
+                                                        <p className="text-sm text-muted-foreground">{candidate.party}</p>
+                                                    </div>
                                                 </div>
                                                 <span className="text-xs font-mono text-muted-foreground">
-                                                    ID: {candidate.candidateId}
+                                                    ID: {candidate.srNo}
                                                 </span>
                                             </label>
                                         ))}
