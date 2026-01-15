@@ -7,6 +7,7 @@ import { Header } from "@/components/Header"
 import axios from "axios"
 import { generateCircuitInput } from '../lib/circuitGenerator'
 import { useNavigate } from "react-router-dom"
+import { saveVoterCredentials } from '@/lib/identityStore';
 
 
 type VerificationStep = "voter-id" | "face" | "otp"
@@ -192,6 +193,54 @@ const stepIndex = steps.findIndex((step) => {
     } finally {
       setLoading(false)
     }
+    // inside handleOtpSubmit after OTP verification succeeded
+// --- generate cryptographically secure secret (browser) ---
+const bytes = new Uint8Array(31);
+window.crypto.getRandomValues(bytes);
+const hex = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+const generatedSecret = BigInt('0x' + hex).toString(); // string
+
+setIdentitySecret(Number(generatedSecret)); // optional UI
+console.log("🔐 Generated Identity Secret:", generatedSecret);
+
+// Generate commitment and merkle data (your existing function)
+const data = await generateCircuitInput(generatedSecret.toString());
+
+console.log("✅ Registration data:", data);
+setRegistrationData(data);
+
+// Build voter credentials object
+const voterCredentials = {
+  identitySecret: generatedSecret.toString(),
+  merkleRoot: data.merkle_root ?? data.circuitInput?.merkle_root,
+  leafIndex: data.leafIndex ?? data.circuitInput?.leafIndex ?? 0,
+  pathElements: data.circuitInput?.pathElements ?? data.pathElements ?? [],
+  pathIndices: data.circuitInput?.pathIndices ?? data.pathIndices ?? [],
+  electionId: data.circuitInput?.election_id ?? data.election_id ?? '1',
+  registeredAt: new Date().toISOString(),
+};
+
+// Save immediately to IndexedDB
+try {
+  await saveVoterCredentials(voterCredentials);
+  console.log('✅ Voter credentials saved to IndexedDB');
+} catch (err) {
+  console.error('Failed to save credentials to IndexedDB', err);
+}
+
+// Optional: still offer a downloaded file for the user
+const dataStr = JSON.stringify(voterCredentials, null, 2);
+const dataBlob = new Blob([dataStr], { type: 'application/json' });
+const url = URL.createObjectURL(dataBlob);
+const link = document.createElement('a');
+link.href = url;
+link.download = `voter-credentials-${voterId}.json`;
+link.click();
+URL.revokeObjectURL(url);
+
+alert(`Registration successful! Your identity secret is saved locally and downloaded. Keep the downloaded file safe!`);
+navigate("/");
+
 
   }
 
