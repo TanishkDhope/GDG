@@ -16,9 +16,8 @@ const BallotScanner = () => {
     const [batchData, setBatchData] = useState<BallotData[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
 
-    // Form State
-    const [data, setData] = useState<BallotData | null>(null);
     const [electionId, setElectionId] = useState<string>("");
+    const [pollDate, setPollDate] = useState<string>("");
 
     // Results
     const [ipfsHash, setIpfsHash] = useState<string | null>(null);
@@ -31,6 +30,9 @@ const BallotScanner = () => {
     const publicClient = usePublicClient();
     const { writeContractAsync, isPending: isWriting } = useWriteContract();
 
+    // Form State
+    const [data, setData] = useState<BallotData | null>(null);
+
     const {
         isLoading: isConfirming,
         isSuccess: isConfirmed,
@@ -38,8 +40,6 @@ const BallotScanner = () => {
     } = useWaitForTransactionReceipt({
         hash: txHash,
     });
-
-    // Removed fileInputRef as it was for UI Scan mode
 
     // Auto-calculate hash whenever name or srNo changes
     useEffect(() => {
@@ -71,8 +71,6 @@ const BallotScanner = () => {
             setBatchHash(null);
         }
     }, [batchData]);
-
-    // Removed handleFileChange and handleScan as they were for the AI Scan mode
 
     const handleJsonImport = () => {
         try {
@@ -159,6 +157,10 @@ const BallotScanner = () => {
             setError("Please enter an Election ID");
             return;
         }
+        if (!pollDate) {
+            setError("Please select a Poll Date");
+            return;
+        }
 
         if (!isConnected) {
             setError("Please connect your wallet first");
@@ -172,16 +174,17 @@ const BallotScanner = () => {
             // Prepare the full batch to upload
             const uploadData = batchData.length > 0 ? batchData : [data!];
 
-            // Add electionId to each item
+            // Add electionId and pollDate to each item
             const finalBatch = uploadData.map(item => ({
                 ...item,
-                electionId
+                electionId,
+                pollDate: new Date(pollDate).toISOString() // Standardize format
             }));
 
             // 1. PRE-FLIGHT SIMULATION
-            // Check if transaction is likely to succeed (admin check, election ID check)
-            // We use a dummy IPFS hash for simulation
+            // ... (rest of upload login)
             try {
+                // ... simulation code ...
                 console.log("DEBUG: Running pre-flight simulation...");
                 await publicClient?.simulateContract({
                     address: getAddress(BALLOT_REGISTRY_ADDRESS),
@@ -192,6 +195,7 @@ const BallotScanner = () => {
                 });
                 console.log("DEBUG: Simulation successful!");
             } catch (simErr: any) {
+                // ... error handling ...
                 console.error("DEBUG: Simulation failed:", simErr);
                 const reason = simErr.shortMessage || simErr.message || "Simulation failed";
 
@@ -206,7 +210,7 @@ const BallotScanner = () => {
             }
 
             // 2. Upload the WHOLE array to IPFS (Only if simulation passed)
-            setIsUploading(true); // Re-affirming loading state for IPFS
+            setIsUploading(true);
             const ipfsUri = await uploadJSONToIPFS(finalBatch);
             setIpfsHash(ipfsUri);
 
@@ -282,14 +286,25 @@ const BallotScanner = () => {
 
                     {/* Right Column: Form & Actions */}
                     <div className="space-y-6">
-                        <div className="space-y-2">
-                            <label className="text-xs font-medium uppercase text-muted-foreground">Election ID (uint256)</label>
-                            <Input
-                                placeholder="e.g. 101"
-                                value={electionId}
-                                onChange={(e) => setElectionId(e.target.value)}
-                                type="number"
-                            />
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <label className="text-xs font-medium uppercase text-muted-foreground">Election ID</label>
+                                <Input
+                                    placeholder="e.g. 101"
+                                    value={electionId}
+                                    onChange={(e) => setElectionId(e.target.value)}
+                                    type="number"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-xs font-medium uppercase text-muted-foreground">Poll Date</label>
+                                <Input
+                                    type="date"
+                                    value={pollDate}
+                                    onChange={(e) => setPollDate(e.target.value)}
+                                    className="bg-background"
+                                />
+                            </div>
                         </div>
 
                         {data ? (
@@ -454,6 +469,11 @@ const BallotScanner = () => {
                                 </div>
 
                                 <div className="space-y-1">
+                                    <p className="text-xs font-bold uppercase text-muted-foreground">Poll Date</p>
+                                    <p className="font-mono bg-background p-2 rounded text-foreground">{pollDate}</p>
+                                </div>
+
+                                <div className="space-y-1">
                                     <p className="text-xs font-bold uppercase text-muted-foreground">Batch Hash (bytes32)</p>
                                     <p className="font-mono bg-background p-2 rounded text-xs text-foreground">{batchHash}</p>
                                     <p className="text-[10px] text-muted-foreground italic">Keccak256 of the whole JSON array</p>
@@ -479,6 +499,6 @@ const BallotScanner = () => {
             </div>
         </div>
     );
-}
+};
 
-export default BallotScanner
+export default BallotScanner;
