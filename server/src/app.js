@@ -9,7 +9,7 @@ import candidateRouter from "./routes/candidates.routes.js";
 const app = express();
 
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || ["http://localhost:3000", "http://localhost:5173", "http://localhost:5174"],
+  origin: "*",
   credentials:true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"], 
   allowedHeaders: ["Authorization", "Content-Type"],

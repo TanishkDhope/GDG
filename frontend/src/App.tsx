@@ -13,6 +13,7 @@ import VotingPage from "./pages/VotingPage";
 import SuccessPage from "./pages/SuccessPage";
 import Test from "./components/Test";
 import BallotScanner from "./components/BallotScanner";
+import TestVoting from "./pages/TestVoting";
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
             <Route path="/success" element={<SuccessPage />} />
             {/* <Route path="/test" element={<Test />} /> */}
             <Route path="/ballot" element={<BallotScanner />} />
+            <Route path="/testVoting" element={<TestVoting/>}/>
           </Routes>
       </Providers>
     </BrowserRouter>
