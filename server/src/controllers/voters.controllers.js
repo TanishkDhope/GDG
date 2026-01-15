@@ -5,12 +5,22 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import client from "../utils/twilio.js";
 
 const createVoter = asyncHandler(async (req, res, next) => {
-  const { profilePicture, fullName, fatherName, gender, dateOfBirth, voterID, email, phoneNumber, address } = req.body;
+  const { 
+    profilePicture, fullName, fatherName, gender, dateOfBirth, 
+    voterID, email, phoneNumber, address,
+    belongingState, district, ward 
+  } = req.body;
+  
   const existingVoter = await Voter.findOne({ $or: [ { voterID }, { email }, { phoneNumber } ] });
   if (existingVoter) {
     return next(new ApiError(400, "Voter with the same Voter ID, email, or phone number already exists"));
   }
-  const newVoter = await Voter.create({ profilePicture, fullName, fatherName, gender, dateOfBirth, voterID, email, phoneNumber, address });
+  
+  const newVoter = await Voter.create({ 
+    profilePicture, fullName, fatherName, gender, dateOfBirth, 
+    voterID, email, phoneNumber, address,
+    belongingState, district, ward 
+  });
   res.status(201).json(new ApiResponse(201, "Voter created successfully", newVoter));
 });
 
@@ -44,7 +54,19 @@ const verifyVoter = asyncHandler(async (req, res, next) => {
     return next(new ApiError(404, "Voter not found or details do not match"));
   }
   
-  res.status(200).json(new ApiResponse(200, "Voter verified successfully", voter));
+  // Return voter with location info for voting page
+  res.status(200).json(new ApiResponse(200, "Voter verified successfully", {
+    _id: voter._id,
+    fullName: voter.fullName,
+    voterID: voter.voterID,
+    phoneNumber: voter.phoneNumber,
+    belongingState: voter.belongingState,
+    district: voter.district,
+    ward: voter.ward,
+    hasVoted: voter.hasVoted,
+    votedAt: voter.votedAt,
+    profilePicture: voter.profilePicture
+  }));
 });
 
 const updateVoter = asyncHandler(async (req, res, next) => {
@@ -102,6 +124,53 @@ const verifyOtp = asyncHandler(async (req, res) => {
   res.json(new ApiResponse(200, "OTP verified successfully"));
 });
 
+// Mark voter as having voted
+const markVoterAsVoted = asyncHandler(async (req, res, next) => {
+  const { voterID, txHash } = req.body;
+  
+  const voter = await Voter.findOne({ voterID });
+  if (!voter) {
+    return next(new ApiError(404, "Voter not found"));
+  }
+  
+  if (voter.hasVoted) {
+    return next(new ApiError(400, "Voter has already cast their vote"));
+  }
+  
+  voter.hasVoted = true;
+  voter.votedAt = new Date();
+  await voter.save();
+  
+  res.status(200).json(new ApiResponse(200, "Vote recorded successfully", {
+    voterID: voter.voterID,
+    hasVoted: voter.hasVoted,
+    votedAt: voter.votedAt,
+    txHash
+  }));
+});
+
+// Get voter by voterID (for voting page)
+const getVoterByVoterID = asyncHandler(async (req, res, next) => {
+  const { voterID } = req.params;
+  
+  const voter = await Voter.findOne({ voterID });
+  if (!voter) {
+    return next(new ApiError(404, "Voter not found"));
+  }
+  
+  res.status(200).json(new ApiResponse(200, "Voter retrieved successfully", {
+    _id: voter._id,
+    fullName: voter.fullName,
+    voterID: voter.voterID,
+    belongingState: voter.belongingState,
+    district: voter.district,
+    ward: voter.ward,
+    hasVoted: voter.hasVoted,
+    votedAt: voter.votedAt,
+    profilePicture: voter.profilePicture
+  }));
+});
+
 export {
   createVoter,
   getVoterById,
@@ -109,5 +178,7 @@ export {
   deleteVoter,
   verifyVoter,
   sendOtp,
-  verifyOtp
+  verifyOtp,
+  markVoterAsVoted,
+  getVoterByVoterID
 };

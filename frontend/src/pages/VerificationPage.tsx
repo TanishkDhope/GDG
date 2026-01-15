@@ -9,6 +9,19 @@ import axios from "axios"
 
 type VerificationStep = "voter-id" | "face" | "otp"
 
+interface VoterInfo {
+  _id: string
+  fullName: string
+  voterID: string
+  phoneNumber: string
+  belongingState: string
+  district: string
+  ward: string
+  hasVoted: boolean
+  votedAt: string | null
+  profilePicture: { url: string; localPath: string }
+}
+
 export default function VerificationPage() {
   const navigate = useNavigate()
   const [currentStep, setCurrentStep] = useState<VerificationStep>("voter-id")
@@ -19,6 +32,7 @@ export default function VerificationPage() {
   const [otp, setOtp] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [verifiedVoter, setVerifiedVoter] = useState<VoterInfo | null>(null)
 
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
@@ -60,6 +74,10 @@ export default function VerificationPage() {
       })
 
       if (response.data.success) {
+        // Store verified voter data for passing to voting page
+        setVerifiedVoter(response.data.data)
+        // Store voterID in localStorage as backup
+        localStorage.setItem('votingVoterID', voterId)
         alert("Voter ID verified successfully!")
         setCurrentStep("face")
       }
@@ -147,7 +165,8 @@ export default function VerificationPage() {
 
       if (response.data.success) {
         alert("OTP verified successfully!")
-        navigate("/voting")
+        // Navigate to voting page with voter data
+        navigate("/voting", { state: { voter: verifiedVoter } })
       }
     } catch (err: any) {
       alert("OTP verification failed.")
