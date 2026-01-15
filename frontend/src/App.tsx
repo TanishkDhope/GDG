@@ -43,10 +43,11 @@ function App() {
               } 
             />
             <Route path="/verify" element={<VerificationPage />} />
-            <Route path="/voting" element={<VotingPage />} />
+            <Route path="/verification" element={<VerificationPage />} />
+            <Route path="/voting" element={<TestVoting />} />
             <Route path="/success" element={<SuccessPage />} />
             {/* <Route path="/test" element={<Test />} /> */}
-            <Route path="/testVoting" element={<TestVoting/>}/>
+            <Route path="/legacy-voting" element={<VotingPage/>}/>
             <Route path="/adminLogin" element={<AdminLogin />} />
           </Routes>
       </Providers>

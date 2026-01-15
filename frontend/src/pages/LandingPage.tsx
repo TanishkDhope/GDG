@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { Header } from "@/components/Header"
 import { Footer } from "@/components/Footer"
@@ -10,6 +10,25 @@ import { CardContainer } from "@/components/Card-Container"
 export default function Home() {
   const navigate = useNavigate()
   const [hoveredFeature, setHoveredFeature] = useState<string | null>(null)
+  const [isRegistered, setIsRegistered] = useState(false)
+
+  // Check registration status on component mount
+  useEffect(() => {
+    const checkRegistrationStatus = () => {
+      // Check if voter credentials exist in localStorage
+      const registered = localStorage.getItem('voterRegistered') === 'true'
+      setIsRegistered(registered)
+    }
+
+    checkRegistrationStatus()
+
+    // Optional: Listen for storage changes (if user opens multiple tabs)
+    window.addEventListener('storage', checkRegistrationStatus)
+    
+    return () => {
+      window.removeEventListener('storage', checkRegistrationStatus)
+    }
+  }, [])
 
   const features = [
     {
@@ -59,13 +78,25 @@ export default function Home() {
               <ButtonGroup layout="horizontal" className="justify-center">
                 <button
                   onClick={() => navigate("/verify")}
-                  className="px-8 py-3 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 transition-colors shadow-md"
+                  disabled={isRegistered}
+                  className={`px-8 py-3 font-semibold rounded-lg transition-colors shadow-md ${
+                    isRegistered
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : 'bg-primary text-primary-foreground hover:bg-primary/90'
+                  }`}
+                  title={isRegistered ? "Already registered" : "Register to vote"}
                 >
                   Register to Vote
                 </button>
                 <button
-                  onClick={() => navigate("/testVoting")}
-                  className="px-8 py-3 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 transition-colors shadow-md"
+                  onClick={() => navigate("/voting")}
+                  disabled={!isRegistered}
+                  className={`px-8 py-3 font-semibold rounded-lg transition-colors shadow-md ${
+                    !isRegistered
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : 'bg-primary text-primary-foreground hover:bg-primary/90'
+                  }`}
+                  title={!isRegistered ? "Please register first" : "Cast your vote"}
                 >
                   Vote Now
                 </button>
@@ -82,6 +113,22 @@ export default function Home() {
                   View Results
                 </button>
               </ButtonGroup>
+
+              {/* Registration Status Indicator */}
+              {isRegistered && (
+                <div className="mt-6">
+                  <span className="inline-flex items-center px-4 py-2 rounded-full bg-green-100 text-green-800 text-sm font-medium">
+                    ✓ You are registered and can vote
+                  </span>
+                </div>
+              )}
+              {!isRegistered && (
+                <div className="mt-6">
+                  <span className="inline-flex items-center px-4 py-2 rounded-full bg-blue-100 text-blue-800 text-sm font-medium">
+                    ℹ Please register first to cast your vote
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </section>

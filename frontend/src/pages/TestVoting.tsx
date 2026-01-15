@@ -10,12 +10,28 @@ import { ZK_VOTING_ABI } from '@/abi/ZKVoting';
 import { ZK_VOTING_ADDRESS } from '@/config/contracts';
 import { v4 as uuidv4 } from 'uuid';
 import { loadLatestVoterCredentials } from '@/lib/identityStore';
+import axios from 'axios';
 
 import {
-  cacheVote,
-  getCachedVotes,
-  markVoteSynced,
+    cacheVote,
+    getCachedVotes,
+    markVoteSynced,
 } from '@/lib/voteCache';
+
+interface Candidate {
+    _id: string;
+    srNo: string;
+    name: string;
+    party: string;
+    icon: string;
+    education: string;
+    legalHistory?: {
+        pendingCases: number;
+        convictions: number;
+    };
+    isReservedSeat: boolean;
+    reservedCategory: string;
+}
 
 const TestVoting = () => {
     const [isOffline, setIsOffline] = useState(!navigator.onLine);
@@ -23,14 +39,16 @@ const TestVoting = () => {
     const [result, setResult] = useState<any>(null);
     const [error, setError] = useState<string | null>(null);
     const [proofData, setProofData] = useState<any>(null);
-    const [candidateId, setCandidateId] = useState<string>('1');
+    const [candidateId, setCandidateId] = useState<string>('');
+    const [candidates, setCandidates] = useState<Candidate[]>([]);
+    const [loadingCandidates, setLoadingCandidates] = useState(false);
     const [identitySecret, setIdentitySecret] = useState<string>('');
     const [txHash, setTxHash] = useState<`0x${string}` | undefined>(undefined);
     const [merkleRootTxHash, setMerkleRootTxHash] = useState<`0x${string}` | undefined>(undefined);
     const [isUpdatingMerkleRoot, setIsUpdatingMerkleRoot] = useState(false);
 
     const { address } = useAccount();
-    
+
     const { writeContractAsync, isPending: isVoting } = useWriteContract();
     const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
         hash: txHash,
@@ -44,10 +62,10 @@ const TestVoting = () => {
     // Handle online/offline status
     useEffect(() => {
         const updateStatus = () => setIsOffline(!navigator.onLine);
-        
+
         // Set initial status
         setIsOffline(!navigator.onLine);
-        
+
         // Add event listeners
         window.addEventListener('online', updateStatus);
         window.addEventListener('offline', updateStatus);
@@ -88,6 +106,25 @@ useEffect(() => {
   return () => { mounted = false; };
 }, []);
 
+
+    // Fetch candidates from backend
+    useEffect(() => {
+        const fetchCandidates = async () => {
+            setLoadingCandidates(true);
+            try {
+                const response = await axios.get('http://localhost:8000/api/v1/candidates');
+                setCandidates(response.data.data || []);
+                console.log('Candidates loaded:', response.data.data);
+            } catch (err) {
+                console.error('Failed to fetch candidates:', err);
+                setError('Failed to load candidates. Please refresh the page.');
+            } finally {
+                setLoadingCandidates(false);
+            }
+        };
+
+        fetchCandidates();
+    }, []);
 
     const syncCachedVotes = async () => {
         const cachedVotes = await getCachedVotes();
@@ -217,7 +254,7 @@ useEffect(() => {
 
             // Store proof data for voting
             setProofData({ a, b, c, input });
-            
+
             await cacheVote({
                 id: uuidv4(),
                 timestamp: Date.now(),
@@ -284,229 +321,55 @@ useEffect(() => {
                 <section className="py-16 md:py-24">
                     <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
                         <div className="space-y-6">
-                            {/* Offline Status Indicator */}
-                            {isOffline && (
-                                <div className="p-3 mb-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg text-sm text-yellow-700">
-                                    You are offline. Your vote will be securely cached and synced later.
-                                </div>
-                            )}
-
-                            {/* Action Button */}
-                            <div className="bg-card border border-border rounded-xl p-8 space-y-6">
-                                <div className="text-center">
-                                    <FileJson className="h-16 w-16 text-primary mx-auto mb-4" />
-                                    <h2 className="text-2xl font-bold text-foreground">Generate Zero-Knowledge Proof</h2>
-                                    <p className="text-muted-foreground mt-2">
-                                        Enter your secret voter credential to generate a ZK proof
-                                    </p>
+                            {/* Candidate Selection */}
+                            <div className="bg-card border border-border rounded-xl p-6 space-y-4">
+                                <div className="flex items-center gap-2 mb-4">
+                                    <Vote className="h-6 w-6 text-primary" />
+                                    <h3 className="text-xl font-semibold text-foreground">Select Candidate</h3>
                                 </div>
 
-                                <div className="max-w-md mx-auto space-y-4">
-                                    <div>
-                                        <label className="text-sm font-medium mb-2 block text-left">
-                                            Your Identity Secret
-                                        </label>
-                                        <Input
-                                            type="text"
-                                            value={identitySecret}
-                                            onChange={(e) => setIdentitySecret(e.target.value)}
-                                            placeholder="Enter your secret (e.g., 123456789)"
-                                            className="w-full font-mono"
-                                        />
-                                        <p className="text-xs text-muted-foreground mt-1 text-left">
-                                            This secret was provided to you during registration
-                                        </p>
+                                {loadingCandidates ? (
+                                    <div className="flex items-center gap-2 text-muted-foreground">
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                        Loading candidates...
                                     </div>
-
-                                    <div className="bg-muted/50 rounded-lg p-4 text-left">
-                                        <p className="text-xs font-semibold text-foreground mb-2">This will generate:</p>
-                                        <ul className="text-xs text-muted-foreground space-y-1">
-                                            <li>• Merkle tree commitment from your secret</li>
-                                            <li>• Merkle proof path elements and indices</li>
-                                            <li>• Zero-knowledge proof for anonymous voting</li>
-                                        </ul>
+                                ) : candidates.length === 0 ? (
+                                    <p className="text-sm text-destructive">No candidates available</p>
+                                ) : (
+                                    <div className="space-y-2">
+                                        {candidates.map((candidate) => (
+                                            <label
+                                                key={candidate._id}
+                                                className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${candidateId === candidate.srNo
+                                                        ? 'border-primary bg-primary/5'
+                                                        : 'border-border hover:border-primary/50'
+                                                    }`}
+                                            >
+                                                <input
+                                                    type="radio"
+                                                    name="candidate"
+                                                    value={candidate.srNo}
+                                                    checked={candidateId === candidate.srNo}
+                                                    onChange={(e) => setCandidateId(e.target.value)}
+                                                    className="w-4 h-4 text-primary"
+                                                />
+                                                <div className="flex items-center gap-3 flex-1">
+                                                    <div className="w-10 h-10 rounded-full bg-amber-400 flex items-center justify-center text-xl">
+                                                        {candidate.icon || "👤"}
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <p className="font-semibold text-foreground">{candidate.name}</p>
+                                                        <p className="text-sm text-muted-foreground">{candidate.party}</p>
+                                                    </div>
+                                                </div>
+                                                <span className="text-xs font-mono text-muted-foreground">
+                                                    ID: {candidate.srNo}
+                                                </span>
+                                            </label>
+                                        ))}
                                     </div>
-
-                                    <Button
-                                        onClick={handleGenerateInput}
-                                        disabled={isGenerating || !identitySecret || isUpdatingMerkleRoot}
-                                        className="w-full font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-md"
-                                    >
-                                        {isGenerating || isUpdatingMerkleRoot ? (
-                                            <>
-                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                {isUpdatingMerkleRoot ? 'Updating Merkle Root...' : 'Generating Proof...'}
-                                            </>
-                                        ) : (
-                                            <>
-                                                <FileJson className="mr-2 h-4 w-4" />
-                                                Generate ZK Proof
-                                            </>
-                                        )}
-                                    </Button>
-                                </div>
+                                )}
                             </div>
-
-                            {/* Error Display */}
-                            {error && (
-                                <div className="p-4 bg-destructive/10 border border-destructive/20 text-destructive rounded-xl text-sm animate-in">
-                                    {error}
-                                </div>
-                            )}
-
-                            {/* Success Result */}
-                            {result && (
-                                <div className="bg-primary/10 border border-primary/20 rounded-xl p-6 animate-in fade-in slide-in-from-bottom-4 space-y-4">
-                                    <div className="flex items-center gap-2 mb-4">
-                                        <CheckCircle className="h-6 w-6 text-primary" />
-                                        <h3 className="text-xl font-semibold text-primary">Input Generated Successfully!</h3>
-                                    </div>
-
-                                    <div className="space-y-3">
-                                        <div>
-                                            <p className="text-xs font-bold uppercase text-muted-foreground mb-1">Identity Secret</p>
-                                            <p className="font-mono bg-background p-2 rounded text-sm text-foreground break-all">
-                                                {result.circuitInput?.identity_secret || result.identity_secret}
-                                            </p>
-                                        </div>
-
-                                        <div>
-                                            <p className="text-xs font-bold uppercase text-muted-foreground mb-1">Commitment</p>
-                                            <p className="font-mono bg-background p-2 rounded text-sm text-foreground break-all">
-                                                {result.commitment}
-                                            </p>
-                                        </div>
-
-                                        <div>
-                                            <p className="text-xs font-bold uppercase text-muted-foreground mb-1">Merkle Root</p>
-                                            <p className="font-mono bg-background p-2 rounded text-sm text-foreground break-all">
-                                                {result.circuitInput?.merkle_root || result.merkle_root}
-                                            </p>
-                                            {isMerkleRootConfirmed && (
-                                                <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
-                                                    <CheckCircle className="h-3 w-3" />
-                                                    Merkle root updated on contract
-                                                </p>
-                                            )}
-                                            {isMerkleRootConfirming && (
-                                                <p className="text-xs text-yellow-600 mt-1 flex items-center gap-1">
-                                                    <Loader2 className="h-3 w-3 animate-spin" />
-                                                    Confirming merkle root update...
-                                                </p>
-                                            )}
-                                        </div>
-
-                                        <div>
-                                            <p className="text-xs font-bold uppercase text-muted-foreground mb-1">Total Voters in Tree</p>
-                                            <p className="font-mono bg-background p-2 rounded text-sm text-foreground break-all">
-                                                {result.totalVoters || 1}
-                                            </p>
-                                        </div>
-
-                                        <div>
-                                            <p className="text-xs font-bold uppercase text-muted-foreground mb-1">Election ID</p>
-                                            <p className="font-mono bg-background p-2 rounded text-sm text-foreground break-all">
-                                                {result.circuitInput?.election_id || result.election_id}
-                                            </p>
-                                        </div>
-
-                                        <div>
-                                            <p className="text-xs font-bold uppercase text-muted-foreground mb-1">Leaf Index</p>
-                                            <p className="font-mono bg-background p-2 rounded text-sm text-foreground break-all">
-                                                {result.leafIndex}
-                                            </p>
-                                        </div>
-
-                                        <details className="mt-4">
-                                            <summary className="cursor-pointer text-sm font-semibold text-primary hover:text-primary/80">
-                                                View Full Circuit Input JSON
-                                            </summary>
-                                            <pre className="mt-2 p-4 bg-background border border-border rounded text-xs overflow-x-auto">
-                                                {JSON.stringify(result.circuitInput || result, null, 2)}
-                                            </pre>
-                                        </details>
-
-                                        <Button
-                                            onClick={() => {
-                                                const dataStr = JSON.stringify(result.circuitInput, null, 2);
-                                                const dataBlob = new Blob([dataStr], { type: 'application/json' });
-                                                const url = URL.createObjectURL(dataBlob);
-                                                const link = document.createElement('a');
-                                                link.href = url;
-                                                link.download = 'input.json';
-                                                link.click();
-                                                URL.revokeObjectURL(url);
-                                            }}
-                                            className="w-full bg-secondary text-secondary-foreground hover:bg-muted border border-border"
-                                            variant="secondary"
-                                        >
-                                            <FileJson className="mr-2 h-4 w-4" />
-                                            Download input.json
-                                        </Button>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Voting Section */}
-                            {proofData && (
-                                <div className="bg-card border border-border rounded-xl p-6 space-y-4">
-                                    <div className="flex items-center gap-2 mb-4">
-                                        <Vote className="h-6 w-6 text-primary" />
-                                        <h3 className="text-xl font-semibold text-foreground">Cast Your Vote</h3>
-                                    </div>
-
-                                    <div className="space-y-4">
-                                        <div>
-                                            <label className="text-sm font-medium mb-2 block">Candidate ID</label>
-                                            <Input
-                                                type="number"
-                                                min="1"
-                                                value={candidateId}
-                                                onChange={(e) => setCandidateId(e.target.value)}
-                                                placeholder="Enter candidate ID"
-                                                className="w-full"
-                                            />
-                                        </div>
-
-                                        <Button
-                                            onClick={handleVote}
-                                            disabled={isVoting || isConfirming || isConfirmed}
-                                            className="w-full font-semibold"
-                                        >
-                                            {isVoting ? (
-                                                <>
-                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                    Confirm in Wallet...
-                                                </>
-                                            ) : isConfirming ? (
-                                                <>
-                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                    Confirming Transaction...
-                                                </>
-                                            ) : isConfirmed ? (
-                                                <>
-                                                    <CheckCircle className="mr-2 h-4 w-4" />
-                                                    Vote Submitted!
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <Vote className="mr-2 h-4 w-4" />
-                                                    Submit Vote with ZK Proof
-                                                </>
-                                            )}
-                                        </Button>
-
-                                        {isConfirmed && txHash && (
-                                            <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-xl">
-                                                <p className="text-sm font-semibold text-green-600 mb-2">Vote Successfully Cast!</p>
-                                                <p className="text-xs text-muted-foreground break-all">
-                                                    Transaction: {txHash}
-                                                </p>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
                         </div>
                     </div>
                 </section>
