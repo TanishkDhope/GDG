@@ -35,19 +35,19 @@ export function Header({ showNav = true }: HeaderProps) {
               </button> */}
               <button
                 onClick={() => navigate("/candidates")}
-                className="text-sm font-medium text-foreground hover:text-primary transition-colors"
+                className="text-[15px] font-medium text-foreground hover:text-primary transition-colors"
               >
                 Candidates
               </button>
               <button
                 onClick={() => navigate("/results")}
-                className="text-sm font-medium text-foreground hover:text-primary transition-colors"
+                className="text-[15px] font-medium text-foreground hover:text-primary transition-colors"
               >
                 Results
               </button>
               <button
                 onClick={() => navigate("/help")}
-                className="text-sm font-medium text-foreground hover:text-primary transition-colors"
+                className="text-[15px] font-medium text-foreground hover:text-primary transition-colors"
               >
                 Help
               </button>
