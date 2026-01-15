@@ -13,9 +13,9 @@ dotenv.config(
 await mongoose.connect(process.env.MONGODB_URI);
 
 const admin = await User.create({
-  email: "admin@aai.aero",
+  email: "admin@gmail.com",
   username: "admin",
-  password: "password@123",
+  password: "123456",
   role: "admin",
   isEmailVerified: true
 });

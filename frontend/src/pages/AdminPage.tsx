@@ -1,73 +1,68 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Footer } from "@/components/Footer"
-import { Header } from "@/components/Header"
+import { AdminNavbar } from "@/components/AdminNavbar"
 import { CardContainer } from "@/components/Card-Container"
+import axios from "axios"
+import { Loader2, X, MessageSquare, RefreshCw } from "lucide-react"
+
+const API_BASE = "http://localhost:8000/api/v1"
 
 interface Complaint {
-  id: string
+  _id: string
   voterId: string
   category: string
   description: string
   status: "submitted" | "under-review" | "resolved"
-  submittedAt: string
+  adminResponse: string
+  createdAt: string
+  resolvedAt: string | null
+}
+
+interface ComplaintStats {
+  total: number
+  submitted: number
+  underReview: number
+  resolved: number
 }
 
 export default function AdminPage() {
   const [filterStatus, setFilterStatus] = useState<"all" | "submitted" | "under-review" | "resolved">("all")
+  const [complaints, setComplaints] = useState<Complaint[]>([])
+  const [stats, setStats] = useState<ComplaintStats>({ total: 0, submitted: 0, underReview: 0, resolved: 0 })
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  
+  // Modal state for updating complaint
+  const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null)
+  const [newStatus, setNewStatus] = useState<string>("")
+  const [adminResponse, setAdminResponse] = useState<string>("")
+  const [updating, setUpdating] = useState(false)
 
-  const complaints: Complaint[] = [
-    {
-      id: "1",
-      voterId: "ABC1234567",
-      category: "face-verification",
-      description: "Face verification failed multiple times even with clear image",
-      status: "under-review",
-      submittedAt: "2025-01-12",
-    },
-    {
-      id: "2",
-      voterId: "XYZ9876543",
-      category: "otp",
-      description: "Did not receive OTP on registered mobile number for 10 minutes",
-      status: "resolved",
-      submittedAt: "2025-01-11",
-    },
-    {
-      id: "3",
-      voterId: "PQR5555555",
-      category: "technical",
-      description: "Website became unresponsive during voting process",
-      status: "submitted",
-      submittedAt: "2025-01-13",
-    },
-    {
-      id: "4",
-      voterId: "MNO7777777",
-      category: "voter-id",
-      description: "Voter ID not recognized in the system",
-      status: "under-review",
-      submittedAt: "2025-01-12",
-    },
-    {
-      id: "5",
-      voterId: "JKL4444444",
-      category: "voting-process",
-      description: "Confirmation modal disappeared before submission",
-      status: "resolved",
-      submittedAt: "2025-01-10",
-    },
-  ]
-
-  const filteredComplaints = filterStatus === "all" ? complaints : complaints.filter((c) => c.status === filterStatus)
-
-  const stats = {
-    total: complaints.length,
-    submitted: complaints.filter((c) => c.status === "submitted").length,
-    underReview: complaints.filter((c) => c.status === "under-review").length,
-    resolved: complaints.filter((c) => c.status === "resolved").length,
+  const fetchComplaints = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const response = await axios.get(`${API_BASE}/complaints`, { withCredentials: true })
+      if (response.data.success) {
+        setComplaints(response.data.data.complaints)
+        setStats(response.data.data.stats)
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Failed to fetch complaints. Make sure you are logged in as admin.")
+    } finally {
+      setLoading(false)
+    }
   }
+
+  useEffect(() => {
+    fetchComplaints()
+  }, [])
+
+  const filteredComplaints = filterStatus === "all" 
+    ? complaints 
+    : complaints.filter((c) => c.status === filterStatus)
 
   const electionStats = {
     totalVoters: 150000,
@@ -102,42 +97,74 @@ export default function AdminPage() {
     }
   }
 
+  const openUpdateModal = (complaint: Complaint) => {
+    setSelectedComplaint(complaint)
+    setNewStatus(complaint.status)
+    setAdminResponse(complaint.adminResponse || "")
+  }
+
+  const closeModal = () => {
+    setSelectedComplaint(null)
+    setNewStatus("")
+    setAdminResponse("")
+  }
+
+  const handleUpdateComplaint = async () => {
+    if (!selectedComplaint) return
+    
+    setUpdating(true)
+    try {
+      const response = await axios.patch(
+        `${API_BASE}/complaints/${selectedComplaint._id}`,
+        { status: newStatus, adminResponse },
+        { withCredentials: true }
+      )
+      
+      if (response.data.success) {
+        // Update local state
+        setComplaints(prev => prev.map(c => 
+          c._id === selectedComplaint._id 
+            ? { ...c, status: newStatus as Complaint["status"], adminResponse, resolvedAt: newStatus === "resolved" ? new Date().toISOString() : null }
+            : c
+        ))
+        
+        // Update stats
+        fetchComplaints()
+        closeModal()
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Failed to update complaint")
+    } finally {
+      setUpdating(false)
+    }
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Header showNav={false} />
+      <AdminNavbar />
 
       <main className="flex-1 py-12">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold text-foreground mb-2">Admin Dashboard</h1>
-            <p className="text-muted-foreground">Read-only election monitoring and complaint management</p>
+          <div className="mb-8 flex items-center justify-between">
+            <div>
+              <h1 className="text-4xl font-bold text-foreground mb-2">Admin Dashboard</h1>
+              <p className="text-muted-foreground">Election monitoring and complaint management</p>
+            </div>
+            <button
+              onClick={fetchComplaints}
+              disabled={loading}
+              className="flex items-center gap-2 px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-muted transition-colors border border-border"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </button>
           </div>
 
-          {/* Election Statistics */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <CardContainer className="bg-gradient-to-br from-primary/5 to-primary/10">
-              <p className="text-xs font-medium text-muted-foreground mb-2">TOTAL REGISTERED VOTERS</p>
-              <p className="text-3xl font-bold text-foreground">{electionStats.totalVoters.toLocaleString()}</p>
-            </CardContainer>
-
-            <CardContainer className="bg-gradient-to-br from-accent/5 to-accent/10">
-              <p className="text-xs font-medium text-muted-foreground mb-2">VOTES CAST</p>
-              <p className="text-3xl font-bold text-foreground">{electionStats.totalVotes.toLocaleString()}</p>
-            </CardContainer>
-
-            <CardContainer>
-              <p className="text-xs font-medium text-muted-foreground mb-2">VOTING PERCENTAGE</p>
-              <p className="text-3xl font-bold text-primary">{electionStats.votingPercentage.toFixed(1)}%</p>
-            </CardContainer>
-
-            <CardContainer>
-              <p className="text-xs font-medium text-muted-foreground mb-2">STATUS</p>
-              <div className="flex items-center gap-2">
-                <span className="inline-block h-2 w-2 bg-accent rounded-full animate-pulse"></span>
-                <p className="text-lg font-semibold text-foreground">Live</p>
-              </div>
-            </CardContainer>
-          </div>
+          {error && (
+            <div className="mb-6 bg-red-50 border border-red-300 rounded-lg p-4">
+              <p className="text-red-700">{error}</p>
+            </div>
+          )}
 
           {/* Complaint Statistics */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
@@ -180,57 +207,147 @@ export default function AdminPage() {
               </div>
             </div>
 
-            <div className="space-y-4">
-              {filteredComplaints.map((complaint) => (
-                <CardContainer key={complaint.id} className="hover:shadow-md transition-shadow">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-3">
-                        <span
-                          className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(complaint.status)}`}
-                        >
-                          {getStatusIcon(complaint.status)} {complaint.status}
-                        </span>
-                        <span className="text-sm font-medium text-muted-foreground">{complaint.submittedAt}</span>
+            {loading ? (
+              <CardContainer className="text-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
+                <p className="text-muted-foreground">Loading complaints...</p>
+              </CardContainer>
+            ) : (
+              <div className="space-y-4">
+                {filteredComplaints.map((complaint) => (
+                  <CardContainer key={complaint._id} className="hover:shadow-md transition-shadow">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-3">
+                          <span
+                            className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(complaint.status)}`}
+                          >
+                            {getStatusIcon(complaint.status)} {complaint.status.replace("-", " ")}
+                          </span>
+                          <span className="text-sm font-medium text-muted-foreground">
+                            {new Date(complaint.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <h3 className="font-semibold text-foreground mb-1 capitalize">
+                          {complaint.category.replace("-", " ")}
+                        </h3>
+                        <p className="text-sm text-foreground mb-2">{complaint.description}</p>
+                        <p className="text-xs text-muted-foreground">Voter ID: {complaint.voterId}</p>
+                        
+                        {complaint.adminResponse && (
+                          <div className="mt-3 pt-3 border-t border-border">
+                            <p className="text-xs font-medium text-muted-foreground mb-1">Admin Response:</p>
+                            <p className="text-sm text-foreground bg-muted/30 p-2 rounded">{complaint.adminResponse}</p>
+                          </div>
+                        )}
+                        
+                        {complaint.resolvedAt && (
+                          <p className="text-xs text-green-600 mt-2">
+                            ✓ Resolved on {new Date(complaint.resolvedAt).toLocaleDateString()}
+                          </p>
+                        )}
                       </div>
-                      <h3 className="font-semibold text-foreground mb-1">
-                        {complaint.category.replace("-", " ").charAt(0).toUpperCase() +
-                          complaint.category.replace("-", " ").slice(1)}
-                      </h3>
-                      <p className="text-sm text-foreground mb-2">{complaint.description}</p>
-                      <p className="text-xs text-muted-foreground">Voter ID: {complaint.voterId}</p>
+                      <button 
+                        onClick={() => openUpdateModal(complaint)}
+                        className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium flex items-center gap-2"
+                      >
+                        <MessageSquare className="w-4 h-4" />
+                        Update
+                      </button>
                     </div>
-                    <button className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-muted transition-colors text-sm font-medium border border-border">
-                      View Details
-                    </button>
-                  </div>
-                </CardContainer>
-              ))}
+                  </CardContainer>
+                ))}
 
-              {filteredComplaints.length === 0 && (
-                <CardContainer className="text-center py-8">
-                  <p className="text-muted-foreground">No complaints with this status</p>
-                </CardContainer>
-              )}
-            </div>
-          </div>
-
-          {/* Transparency Notice */}
-          <CardContainer className="mt-12 bg-accent/10 border-2 border-accent">
-            <div className="flex gap-4">
-              <div className="text-2xl flex-shrink-0">🔐</div>
-              <div>
-                <h3 className="font-semibold text-foreground mb-2">Admin Panel Security Notice</h3>
-                <p className="text-sm text-muted-foreground">
-                  This admin panel is read-only for transparency purposes. No votes can be modified, deleted, or edited.
-                  All actions are logged and auditable. This ensures the integrity and security of the entire voting
-                  system.
-                </p>
+                {filteredComplaints.length === 0 && !loading && (
+                  <CardContainer className="text-center py-8">
+                    <p className="text-muted-foreground">No complaints with this status</p>
+                  </CardContainer>
+                )}
               </div>
-            </div>
-          </CardContainer>
+            )}
+          </div>
         </div>
       </main>
+
+      {/* Update Complaint Modal */}
+      {selectedComplaint && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-background rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-foreground">Update Complaint</h2>
+                <button onClick={closeModal} className="p-2 hover:bg-muted rounded-lg transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <div className="space-y-4 mb-6">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground mb-1">Voter ID</p>
+                  <p className="text-foreground">{selectedComplaint.voterId}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground mb-1">Category</p>
+                  <p className="text-foreground capitalize">{selectedComplaint.category.replace("-", " ")}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground mb-1">Description</p>
+                  <p className="text-foreground">{selectedComplaint.description}</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">Update Status</label>
+                  <select
+                    value={newStatus}
+                    onChange={(e) => setNewStatus(e.target.value)}
+                    className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  >
+                    <option value="submitted">Submitted</option>
+                    <option value="under-review">Under Review</option>
+                    <option value="resolved">Resolved</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">Admin Response</label>
+                  <textarea
+                    value={adminResponse}
+                    onChange={(e) => setAdminResponse(e.target.value)}
+                    placeholder="Enter response to the user (visible to them when they track their complaint)..."
+                    rows={4}
+                    className="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                  ></textarea>
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={closeModal}
+                  className="flex-1 px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-muted transition-colors font-medium border border-border"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleUpdateComplaint}
+                  disabled={updating}
+                  className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {updating ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Updating...
+                    </>
+                  ) : (
+                    "Save Changes"
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Footer />
     </div>

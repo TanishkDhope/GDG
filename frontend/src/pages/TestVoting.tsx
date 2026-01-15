@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import Navbar from '../components/Navbar';
+
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { FileJson, Loader2, CheckCircle, Vote } from 'lucide-react';
 import { generateCircuitInput } from '../lib/circuitGenerator';
 import * as snarkjs from "snarkjs";
+import {Header} from '@/components/Header';
 import { useWriteContract, useWaitForTransactionReceipt, useAccount } from "wagmi";
 import { ZK_VOTING_ABI } from '@/abi/ZKVoting';
 import { ZK_VOTING_ADDRESS } from '@/config/contracts';
@@ -267,7 +268,7 @@ const TestVoting = () => {
 
     return (
         <div className="min-h-screen flex flex-col bg-background">
-            <Navbar />
+            <Header showNav={false} />
 
             <main className="flex-1">
                 {/* Hero Section */}
