@@ -28,9 +28,9 @@ export default function VerificationPage() {
   const streamRef = useRef<MediaStream | null>(null)
   const detectionIntervalRef = useRef<number | null>(null)
 
-const steps = ["Voter ID", "Face Verification", "OTP Verification"]
-const navigate = useNavigate()
-const stepIndex = steps.findIndex((step) => {
+  const steps = ["Voter ID", "Face Verification", "OTP Verification"]
+  const navigate = useNavigate()
+  const stepIndex = steps.findIndex((step) => {
     if (step === "Voter ID") return currentStep === "voter-id"
     if (step === "Face Verification") return currentStep === "face"
     if (step === "OTP Verification") return currentStep === "otp"
@@ -143,49 +143,46 @@ const stepIndex = steps.findIndex((step) => {
 
     setLoading(true)
     try {
-    //   const response = await axios.post(`http://localhost:8000/api/v1/voters/verify-otp`, {
-    //     voterID: voterId,
-    //     otp,
-    //   })
-    //   if(response.data.success){
-    // console.log("✅ OTP verified (testing mode)");
-    
+      const response = await axios.post(`http://localhost:8000/api/v1/voters/verify-otp`, {
+        voterID: voterId,
+        otp,
+      })
 
-      // Generate random identity secret
-      const generatedSecret = Math.floor(Math.random() * 1000000000);
-      setIdentitySecret(generatedSecret);
-      console.log("🔐 Generated Identity Secret:", generatedSecret);
+      if (response.data.success) {
+        console.log("✅ OTP verified (testing mode)");
 
-      // Generate commitment and add to merkle tree
-      const data = await generateCircuitInput(generatedSecret.toString());
 
-      console.log("✅ Registration data:", data);
-      setRegistrationData(data);
+        // Generate random identity secret
+        const generatedSecret = Math.floor(Math.random() * 1000000000);
+        setIdentitySecret(generatedSecret);
+        console.log("🔐 Generated Identity Secret:", generatedSecret);
 
-      // Create downloadable JSON file with voter credentials
-      const voterCredentials = {
-        identitySecret: generatedSecret.toString(),
-        merkleRoot: data.merkle_root,
-        leafIndex: data.leafIndex,
-        pathElements: data.circuitInput.pathElements,
-        pathIndices: data.circuitInput.pathIndices,
-        registeredAt: new Date().toISOString()
-      };
+        // Generate commitment and add to merkle tree
+        const data = await generateCircuitInput(generatedSecret.toString());
 
-      // Auto-download the credentials file
-      const dataStr = JSON.stringify(voterCredentials, null, 2);
-      const dataBlob = new Blob([dataStr], { type: 'application/json' });
-      const url = URL.createObjectURL(dataBlob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `voter-credentials-${voterId}.json`;
-      link.click();
-      URL.revokeObjectURL(url);
-      alert(`Registration successful! Your identity secret is: ${generatedSecret}\n\nYour credentials have been downloaded. Keep them safe!`);
-      navigate("/")
+        console.log("✅ Registration data:", data);
+        setRegistrationData(data);
+
+        // Create downloadable JSON file with voter credentials
+        const voterCredentials = {
+          identitySecret: generatedSecret.toString(),
+          
+        };
+
+        // Auto-download the credentials file
+        const dataStr = JSON.stringify(voterCredentials, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `voter-credentials-${voterId}.json`;
+        link.click();
+        URL.revokeObjectURL(url);
+        alert(`Registration successful! Your identity secret is: ${generatedSecret}\n\nYour credentials have been downloaded. Keep them safe!`);
+        navigate("/")
       }
+     }
 
-    
     catch (err: any) {
       alert("OTP verification failed.")
       setError(err.response?.data?.message || "Verification failed. Please check your OTP and try again.")
