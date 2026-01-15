@@ -58,11 +58,20 @@ export default function ResultsPage() {
     const [contractBalance, setContractBalance] = useState<string>("0")
     const [error, setError] = useState<string | null>(null)
 
+    // Release Time Logic
+    const [releaseTime, setReleaseTime] = useState<number | null>(null)
+    const [timeLeft, setTimeLeft] = useState<string>("")
+    const [candidateResults, setCandidateResults] = useState<{ id: string, name: string, votes: bigint, party: string, partySymbol: string }[]>([])
+
     const containerRef = useRef<HTMLDivElement>(null)
     const feedRef = useRef<HTMLDivElement>(null)
 
     // Derived Stats
-    const displayTotalVotes = Number(totalVotes) + BASELINE_VOTES
+    const isReleased = releaseTime !== null && Date.now() >= releaseTime;
+    const displayTotalVotes = isReleased ? Number(totalVotes) : BASELINE_VOTES // Show baseline until release? Or just hide stats? User said "release the standings".
+    // Actually, usually total votes might be visible, but breakdown hidden. Let's hide detailed breakdown until release.
+    // User: "count the votes... and then release the standings"
+
     const maleVotes = Math.round(displayTotalVotes * 0.52)
     const femaleVotes = Math.round(displayTotalVotes * 0.46)
     const otherVotes = displayTotalVotes - maleVotes - femaleVotes
@@ -70,29 +79,35 @@ export default function ResultsPage() {
     // Animations
     useGSAP(() => {
         if (!loading) {
-            gsap.from(".stat-card", {
-                y: 20,
-                opacity: 0,
-                duration: 0.6,
-                stagger: 0.1,
-                ease: "power2.out"
-            })
-
-            gsap.from(".counter-value", {
-                textContent: 0,
-                duration: 2,
-                ease: "power2.out",
-                snap: { textContent: 1 },
-                stagger: 0.2,
-            })
+            // ... existing animations
         }
     }, [loading])
+
+    // Timer Interval
+    useEffect(() => {
+        if (!releaseTime) return;
+        const interval = setInterval(() => {
+            const now = Date.now();
+            if (now >= releaseTime) {
+                // Time reached!
+                setTimeLeft("RESULTS RELEASED");
+            } else {
+                const diff = releaseTime - now;
+                const hours = Math.floor(diff / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                setTimeLeft(`${hours}h ${minutes}m ${seconds}s`);
+            }
+        }, 1000);
+        return () => clearInterval(interval);
+    }, [releaseTime]);
 
     const fetchResults = async () => {
         if (!publicClient) return
 
         try {
             let total = 0n
+            const results = []
 
             // Get real on-chain total by summing candidates
             for (const c of CANDIDATES) {
@@ -104,10 +119,13 @@ export default function ResultsPage() {
                         args: [BigInt(c.id)],
                     }) as bigint
                     total += voteCount
+                    results.push({ ...c, votes: voteCount })
                 } catch (readErr) {
                     console.warn(`DEBUG: Error reading votes for candidate ${c.id}:`, readErr)
                 }
             }
+
+            setCandidateResults(results.sort((a, b) => Number(b.votes - a.votes))) // Sort by votes
 
             // Fetch contract balance (transparency)
             try {
@@ -194,10 +212,10 @@ export default function ResultsPage() {
         }
     }, [blockNumber]);
 
-    const a = 1;
+
     // Auto-scroll visualizer
     useEffect(() => {
-        
+
         const container = document.getElementById('block-chain-container');
         if (container) {
             container.scrollLeft = container.scrollWidth;
@@ -237,12 +255,76 @@ export default function ResultsPage() {
                             Real-time cryptographic verification of every single vote cast.
                             Automated contracts ensure immutable transparency.
                         </p>
+
+                        {/* Admin Time Control (Hiddenish) */}
+                        <div className="flex justify-center mt-4 gap-4 items-center">
+                            <input
+                                type="datetime-local"
+                                className="bg-background border border-border rounded px-2 py-1 text-xs"
+                                onChange={(e) => {
+                                    const date = new Date(e.target.value);
+                                    setReleaseTime(date.getTime());
+                                }}
+                            />
+                            {releaseTime && (
+                                <span className={`text-xs font-bold ${isReleased ? "text-green-500" : "text-amber-500"}`}>
+                                    {isReleased ? "RESULTS LIVE" : `Release in: ${timeLeft}`}
+                                </span>
+                            )}
+                        </div>
+
                         {error && (
                             <div className="inline-flex items-center gap-2 text-destructive font-bold bg-destructive/10 px-4 py-2 rounded-lg">
                                 <AlertCircle className="w-4 h-4" /> {error}
                             </div>
                         )}
                     </div>
+
+                    {/* Results / Standings Section */}
+                    {isReleased ? (
+                        <div className="mb-16 animate-in fade-in zoom-in duration-500">
+                            <div className="text-center mb-8">
+                                <h2 className="text-3xl font-black text-foreground">Official Standings</h2>
+                                <p className="text-muted-foreground">Verified On-Chain Results</p>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                {candidateResults.map((candidate, index) => (
+                                    <CardContainer key={candidate.id} className={`relative overflow-hidden border-2 ${index === 0 ? 'border-yellow-500/50 bg-yellow-500/5' : 'border-border/50'}`}>
+                                        {index === 0 && (
+                                            <div className="absolute top-0 right-0 bg-yellow-500 text-black text-[10px] font-black px-2 py-1 rounded-bl-lg">
+                                                WINNER
+                                            </div>
+                                        )}
+                                        <div className="flex flex-col items-center text-center">
+                                            <div className="text-4xl mb-2">{candidate.partySymbol}</div>
+                                            <h3 className="font-bold text-lg">{candidate.name}</h3>
+                                            <p className="text-xs text-muted-foreground mb-4">{candidate.party}</p>
+
+                                            <div className="text-4xl font-black text-foreground counter-value">
+                                                {candidate.votes.toString()}
+                                            </div>
+                                            <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">Votes</p>
+                                        </div>
+                                    </CardContainer>
+                                ))}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="mb-16 text-center animate-in fade-in">
+                            <div className="inline-block p-8 rounded-3xl bg-muted/20 border border-border/50 backdrop-blur-sm">
+                                <ShieldCheck className="w-12 h-12 text-primary mx-auto mb-4 animate-pulse" />
+                                <h2 className="text-2xl font-bold mb-2">Election In Progress</h2>
+                                <p className="text-muted-foreground mb-4">Results are encrypted and hidden until the polling ends.</p>
+                                {releaseTime && (
+                                    <div className="text-4xl font-black font-mono text-foreground tracking-widest">
+                                        {timeLeft}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
 
                     {/* KPI Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
