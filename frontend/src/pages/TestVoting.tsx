@@ -16,6 +16,7 @@ const TestVoting = () => {
     const [error, setError] = useState<string | null>(null);
     const [proofData, setProofData] = useState<any>(null);
     const [candidateId, setCandidateId] = useState<string>('1');
+    const [identitySecret, setIdentitySecret] = useState<string>('');
     const [txHash, setTxHash] = useState<`0x${string}` | undefined>(undefined);
 
     const { writeContractAsync, isPending: isVoting } = useWriteContract();
@@ -25,16 +26,21 @@ const TestVoting = () => {
     });
 
     const handleGenerateInput = async () => {
+        if (!identitySecret || identitySecret.trim() === '') {
+            setError('Please enter your identity secret');
+            return;
+        }
+
         setIsGenerating(true);
         setError(null);
         setResult(null);
 
         try {
-            // Generate circuit input locally in the frontend
-            const data = await generateCircuitInput();
+            // Generate circuit input with user's secret
+            const data = await generateCircuitInput(identitySecret);
             setResult(data);
             console.log(data.circuitInput)
-            
+
             const { proof, publicSignals } = await snarkjs.groth16.fullProve(
                 data.circuitInput,
                 "/voterCircuit.wasm",
@@ -114,36 +120,59 @@ const TestVoting = () => {
                     <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
                         <div className="space-y-6">
                             {/* Action Button */}
-                            <div className="bg-card border border-border rounded-xl p-8 text-center space-y-4">
-                                <FileJson className="h-16 w-16 text-primary mx-auto" />
-                                <h2 className="text-2xl font-bold text-foreground">Generate Circuit Input</h2>
-                                <p className="text-muted-foreground">
-                                    This will create a new input.json file with:
-                                </p>
-                                <ul className="text-sm text-muted-foreground space-y-2 max-w-md mx-auto text-left">
-                                    <li>• Identity secret (voter credential)</li>
-                                    <li>• Merkle tree commitment</li>
-                                    <li>• Merkle proof path elements and indices</li>
-                                    <li>• Election ID</li>
-                                </ul>
+                            <div className="bg-card border border-border rounded-xl p-8 space-y-6">
+                                <div className="text-center">
+                                    <FileJson className="h-16 w-16 text-primary mx-auto mb-4" />
+                                    <h2 className="text-2xl font-bold text-foreground">Generate Zero-Knowledge Proof</h2>
+                                    <p className="text-muted-foreground mt-2">
+                                        Enter your secret voter credential to generate a ZK proof
+                                    </p>
+                                </div>
 
-                                <Button
-                                    onClick={handleGenerateInput}
-                                    disabled={isGenerating}
-                                    className="w-full max-w-md mx-auto font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-md mt-6"
-                                >
-                                    {isGenerating ? (
-                                        <>
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                            Generating...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <FileJson className="mr-2 h-4 w-4" />
-                                            Generate input.json
-                                        </>
-                                    )}
-                                </Button>
+                                <div className="max-w-md mx-auto space-y-4">
+                                    <div>
+                                        <label className="text-sm font-medium mb-2 block text-left">
+                                            Your Identity Secret
+                                        </label>
+                                        <Input
+                                            type="text"
+                                            value={identitySecret}
+                                            onChange={(e) => setIdentitySecret(e.target.value)}
+                                            placeholder="Enter your secret (e.g., 123456789)"
+                                            className="w-full font-mono"
+                                        />
+                                        <p className="text-xs text-muted-foreground mt-1 text-left">
+                                            This secret was provided to you during registration
+                                        </p>
+                                    </div>
+
+                                    <div className="bg-muted/50 rounded-lg p-4 text-left">
+                                        <p className="text-xs font-semibold text-foreground mb-2">This will generate:</p>
+                                        <ul className="text-xs text-muted-foreground space-y-1">
+                                            <li>• Merkle tree commitment from your secret</li>
+                                            <li>• Merkle proof path elements and indices</li>
+                                            <li>• Zero-knowledge proof for anonymous voting</li>
+                                        </ul>
+                                    </div>
+
+                                    <Button
+                                        onClick={handleGenerateInput}
+                                        disabled={isGenerating || !identitySecret}
+                                        className="w-full font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-md"
+                                    >
+                                        {isGenerating ? (
+                                            <>
+                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                Generating Proof...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <FileJson className="mr-2 h-4 w-4" />
+                                                Generate ZK Proof
+                                            </>
+                                        )}
+                                    </Button>
+                                </div>
                             </div>
 
                             {/* Error Display */}
@@ -180,6 +209,13 @@ const TestVoting = () => {
                                             <p className="text-xs font-bold uppercase text-muted-foreground mb-1">Merkle Root</p>
                                             <p className="font-mono bg-background p-2 rounded text-sm text-foreground break-all">
                                                 {result.circuitInput?.merkle_root || result.merkle_root}
+                                            </p>
+                                        </div>
+
+                                        <div>
+                                            <p className="text-xs font-bold uppercase text-muted-foreground mb-1">Total Voters in Tree</p>
+                                            <p className="font-mono bg-background p-2 rounded text-sm text-foreground break-all">
+                                                {result.totalVoters || 1}
                                             </p>
                                         </div>
 
