@@ -5,7 +5,7 @@ import { Input } from '../components/ui/input';
 import { FileJson, Loader2, CheckCircle, Vote } from 'lucide-react';
 import { generateCircuitInput } from '../lib/circuitGenerator';
 import * as snarkjs from "snarkjs";
-import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { useWriteContract, useWaitForTransactionReceipt, useAccount } from "wagmi";
 import { ZK_VOTING_ABI } from '@/abi/ZKVoting';
 import { ZK_VOTING_ADDRESS } from '@/config/contracts';
 
@@ -18,11 +18,18 @@ const TestVoting = () => {
     const [candidateId, setCandidateId] = useState<string>('1');
     const [identitySecret, setIdentitySecret] = useState<string>('');
     const [txHash, setTxHash] = useState<`0x${string}` | undefined>(undefined);
+    const [merkleRootTxHash, setMerkleRootTxHash] = useState<`0x${string}` | undefined>(undefined);
+    const [isUpdatingMerkleRoot, setIsUpdatingMerkleRoot] = useState(false);
 
+    const { address } = useAccount();
     const { writeContractAsync, isPending: isVoting } = useWriteContract();
     const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
         hash: txHash,
         query: { enabled: !!txHash }
+    });
+    const { isLoading: isMerkleRootConfirming, isSuccess: isMerkleRootConfirmed } = useWaitForTransactionReceipt({
+        hash: merkleRootTxHash,
+        query: { enabled: !!merkleRootTxHash }
     });
 
     const handleGenerateInput = async () => {
@@ -41,13 +48,57 @@ const TestVoting = () => {
             setResult(data);
             console.log(data.circuitInput)
 
+            // Update merkle root on contract if user is connected
+            if (address) {
+                try {
+                    setIsUpdatingMerkleRoot(true);
+                    console.log('Updating merkle root on contract:', data.merkle_root);
+
+                    // Convert merkle root string to bytes32
+                    const merkleRootBigInt = BigInt(data.merkle_root);
+                    const merkleRootBytes32 = '0x' + merkleRootBigInt.toString(16).padStart(64, '0') as `0x${string}`;
+
+                    const hash = await writeContractAsync({
+                        address: ZK_VOTING_ADDRESS as `0x${string}`,
+                        abi: ZK_VOTING_ABI,
+                        functionName: 'updateMerkleRoot',
+                        args: [merkleRootBytes32],
+                    });
+                    setMerkleRootTxHash(hash);
+                    console.log('✅ Merkle root updated on contract:', hash);
+                } catch (merkleErr: any) {
+                    console.error('Warning: Failed to update merkle root on contract:', merkleErr);
+                    // Don't throw - allow user to continue with proof generation
+                } finally {
+                    setIsUpdatingMerkleRoot(false);
+                }
+            }
+
             const { proof, publicSignals } = await snarkjs.groth16.fullProve(
                 data.circuitInput,
                 "/voterCircuit.wasm",
                 "/voterCircuit_final.zkey"
             );
-            console.log('Proof:', proof);
-            console.log('Public Signals:', publicSignals);
+            console.log('✅ Proof generated');
+            console.log('📊 Public Signals from circuit:', publicSignals);
+            console.log('Circuit outputs: [merkle_root, nullifier, election_id]');
+            console.log('- Signal [0] (merkle_root):', publicSignals[0]);
+            console.log('- Signal [1] (nullifier):', publicSignals[1]);
+            console.log('- Signal [2] (election_id):', publicSignals[2]);
+
+            // Swap election_id and nullifier (circuit outputs them in wrong order)
+            const correctedPublicSignals = [
+                publicSignals[0], // merkle_root (correct position)
+                publicSignals[2], // nullifier (was at index 2, should be at index 1)
+                publicSignals[1]  // election_id (was at index 1, should be at index 2)
+            ];
+
+            console.log('📊 Corrected Public Signals:', correctedPublicSignals);
+            console.log('Expected: [merkle_root, election_id, nullifier]');
+            console.log('- Public Signal [0] (merkle_root):', correctedPublicSignals[0]);
+            console.log('- Public Signal [1] (election_id):', correctedPublicSignals[1]);
+            console.log('- Public Signal [2] (nullifier):', correctedPublicSignals[2]);
+            console.log('Expected nullifier from circuit input:', data.nullifier);
 
             const calldata = await snarkjs.groth16.exportSolidityCallData(
                 proof,
@@ -59,6 +110,19 @@ const TestVoting = () => {
             const b = argv[1];
             const c = argv[2];
             const input = argv[3];
+
+            console.log('📝 Calldata input array:', input);
+            console.log('This should be [merkle_root, election_id, nullifier]');
+            console.log('Input array length:', input.length);
+
+            if (input.length !== 3) {
+                throw new Error(`Invalid input array length: expected 3, got ${input.length}`);
+            }
+
+            if (input[2] === '1') {
+                console.warn('⚠️ WARNING: Nullifier is 1 (election_id), not the computed nullifier!');
+                console.warn('This means public signals may be in wrong order or circuit output is incorrect');
+            }
 
             // Store proof data for voting
             setProofData({ a, b, c, input });
@@ -80,6 +144,7 @@ const TestVoting = () => {
 
         try {
             setError(null);
+            console.log(proofData)
             const hash = await writeContractAsync({
                 address: ZK_VOTING_ADDRESS as `0x${string}`,
                 abi: ZK_VOTING_ABI,
@@ -89,7 +154,7 @@ const TestVoting = () => {
             setTxHash(hash);
             console.log('Vote transaction submitted:', hash);
         } catch (err: any) {
-            console.error('Voting error:', err.message || err);
+            console.error('Voting error:', err);
             setError(err.shortMessage || err.message || 'Failed to submit vote.');
         }
     };
@@ -157,13 +222,13 @@ const TestVoting = () => {
 
                                     <Button
                                         onClick={handleGenerateInput}
-                                        disabled={isGenerating || !identitySecret}
+                                        disabled={isGenerating || !identitySecret || isUpdatingMerkleRoot}
                                         className="w-full font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-md"
                                     >
-                                        {isGenerating ? (
+                                        {isGenerating || isUpdatingMerkleRoot ? (
                                             <>
                                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                Generating Proof...
+                                                {isUpdatingMerkleRoot ? 'Updating Merkle Root...' : 'Generating Proof...'}
                                             </>
                                         ) : (
                                             <>
@@ -210,6 +275,18 @@ const TestVoting = () => {
                                             <p className="font-mono bg-background p-2 rounded text-sm text-foreground break-all">
                                                 {result.circuitInput?.merkle_root || result.merkle_root}
                                             </p>
+                                            {isMerkleRootConfirmed && (
+                                                <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                                                    <CheckCircle className="h-3 w-3" />
+                                                    Merkle root updated on contract
+                                                </p>
+                                            )}
+                                            {isMerkleRootConfirming && (
+                                                <p className="text-xs text-yellow-600 mt-1 flex items-center gap-1">
+                                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                                    Confirming merkle root update...
+                                                </p>
+                                            )}
                                         </div>
 
                                         <div>

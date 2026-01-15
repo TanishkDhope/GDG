@@ -11,8 +11,19 @@
 
  create_zkvoting:
 	@echo "Usage: make create_zkvoting VERIFIER_ADDRESS=<address> MERKLE_ROOT=<bytes32> ELECTION_ID=<uint256>"
-	@echo "Example: make create_zkvoting VERIFIER_ADDRESS=0x... MERKLE_ROOT=0x... ELECTION_ID=1"
+	@echo "Example: make create_zkvoting VERIFIER_ADDRESS=${VOTER_VERIFIER_ADD} MERKLE_ROOT= ELECTION_ID=1"
 	forge create src/ZKVoting.sol:ZKVoting --rpc-url ${RPC_URL} --private-key ${LOCAL_PRIVATE_KEY} --broadcast --constructor-args ${VERIFIER_ADDRESS} ${MERKLE_ROOT} ${ELECTION_ID}
+ 
+ create_voting:
+	forge create src/ZKVoting.sol:ZKVoting --rpc-url ${RPC_URL} --private-key ${LOCAL_PRIVATE_KEY} --broadcast --constructor-args ${VOTER_VERIFIER_ADD} 1 
+
+ deploy_voting:
+	@echo "Deploying VoterVerifier and ZKVoting contracts..."
+	@VERIFIER=$$(forge create src/VoterVerifier.sol:VoterVerifier --rpc-url ${RPC_URL} --private-key ${LOCAL_PRIVATE_KEY} --broadcast --json | jq -r '.deployedTo'); \
+	echo "VoterVerifier deployed at: $$VERIFIER"; \
+	sleep 2; \
+	echo "Deploying ZKVoting with verifier: $$VERIFIER and electionId: 1"; \
+	forge create src/ZKVoting.sol:ZKVoting --rpc-url ${RPC_URL} --private-key ${LOCAL_PRIVATE_KEY} --broadcast --constructor-args $$VERIFIER 1
 
  try:
 	cast send ${CONTRACT_ADD} "vote(bytes32,uint256)" 0x5b610e8e1835afecdd154863369b91f55612defc17933f83f4425533c435a248 1 --private-key ${LOCAL_PRIVATE_KEY}
