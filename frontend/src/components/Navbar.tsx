@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { useEffect } from "react";
 
 
 export default function Navbar() {
