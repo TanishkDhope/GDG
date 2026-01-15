@@ -1,4 +1,4 @@
-export const ZK_VOTING_ABI =  [
+export const ZK_VOTING_ABI = [
         {
             "type": "constructor",
             "inputs": [
@@ -8,17 +8,25 @@ export const ZK_VOTING_ABI =  [
                     "internalType": "address"
                 },
                 {
-                    "name": "_root",
-                    "type": "bytes32",
-                    "internalType": "bytes32"
-                },
-                {
                     "name": "_electionId",
                     "type": "uint256",
                     "internalType": "uint256"
                 }
             ],
             "stateMutability": "nonpayable"
+        },
+        {
+            "type": "function",
+            "name": "admin",
+            "inputs": [],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address",
+                    "internalType": "address"
+                }
+            ],
+            "stateMutability": "view"
         },
         {
             "type": "function",
@@ -67,6 +75,19 @@ export const ZK_VOTING_ABI =  [
         },
         {
             "type": "function",
+            "name": "updateMerkleRoot",
+            "inputs": [
+                {
+                    "name": "_newRoot",
+                    "type": "bytes32",
+                    "internalType": "bytes32"
+                }
+            ],
+            "outputs": [],
+            "stateMutability": "nonpayable"
+        },
+        {
+            "type": "function",
             "name": "verifier",
             "inputs": [],
             "outputs": [
@@ -99,8 +120,8 @@ export const ZK_VOTING_ABI =  [
                 },
                 {
                     "name": "input",
-                    "type": "uint256[1]",
-                    "internalType": "uint256[1]"
+                    "type": "uint256[3]",
+                    "internalType": "uint256[3]"
                 },
                 {
                     "name": "candidate",
@@ -129,6 +150,19 @@ export const ZK_VOTING_ABI =  [
                 }
             ],
             "stateMutability": "view"
+        },
+        {
+            "type": "event",
+            "name": "MerkleRootUpdated",
+            "inputs": [
+                {
+                    "name": "newRoot",
+                    "type": "bytes32",
+                    "indexed": false,
+                    "internalType": "bytes32"
+                }
+            ],
+            "anonymous": false
         },
         {
             "type": "event",
