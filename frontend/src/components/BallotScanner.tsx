@@ -218,16 +218,19 @@ const BallotScanner = () => {
             const ipfsUri = await uploadJSONToIPFS(finalBatch);
             setIpfsHash(ipfsUri);
 
-            // 2. Trigger Smart Contract Transaction
-            if (batchHash) {
-                const hash = await writeContractAsync({
-                    address: BALLOT_REGISTRY_ADDRESS as `0x${string}`,
-                    abi: BALLOT_REGISTRY_ABI,
-                    functionName: 'storeBallot',
-                    args: [BigInt(electionId), batchHash as `0x${string}`, ipfsUri],
-                });
-                setTxHash(hash);
-            }
+            // 2. Calculate batch hash from the same data being uploaded
+            const jsonStr = JSON.stringify(finalBatch);
+            const calculatedBatchHash = keccak256(toHex(jsonStr));
+            setBatchHash(calculatedBatchHash);
+
+            // 3. Trigger Smart Contract Transaction
+            const hash = await writeContractAsync({
+                address: BALLOT_REGISTRY_ADDRESS as `0x${string}`,
+                abi: BALLOT_REGISTRY_ABI,
+                functionName: 'storeBallot',
+                args: [BigInt(electionId), calculatedBatchHash as `0x${string}`, ipfsUri],
+            });
+            setTxHash(hash);
         } catch (err: any) {
             console.error("Upload/Contract error:", err);
             setError(err.shortMessage || err.message || "Failed to complete process.");

@@ -1,126 +1,126 @@
-export const BALLOT_REGISTRY_ABI = [
-    {
-        "inputs": [],
-        "stateMutability": "nonpayable",
-        "type": "constructor"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": true,
-                "internalType": "uint256",
-                "name": "electionId",
-                "type": "uint256"
-            },
-            {
-                "indexed": false,
-                "internalType": "bytes32",
-                "name": "hash",
-                "type": "bytes32"
-            },
-            {
-                "indexed": false,
-                "internalType": "string",
-                "name": "ipfsHash",
-                "type": "string"
-            }
-        ],
-        "name": "BallotStored",
-        "type": "event"
-    },
-    {
-        "inputs": [],
-        "name": "admin",
-        "outputs": [
-            {
-                "internalType": "address",
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "name": "ballots",
-        "outputs": [
-            {
-                "internalType": "bytes32",
-                "name": "hash",
-                "type": "bytes32"
-            },
-            {
-                "internalType": "string",
-                "name": "ipfsHash",
-                "type": "string"
-            },
-            {
-                "internalType": "uint256",
-                "name": "timestamp",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "electionId",
-                "type": "uint256"
-            }
-        ],
-        "name": "getBallot",
-        "outputs": [
-            {
-                "internalType": "bytes32",
-                "name": "",
-                "type": "bytes32"
-            },
-            {
-                "internalType": "string",
-                "name": "",
-                "type": "string"
-            },
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "electionId",
-                "type": "uint256"
-            },
-            {
-                "internalType": "bytes32",
-                "name": "ballotHash",
-                "type": "bytes32"
-            },
-            {
-                "internalType": "string",
-                "name": "ipfsHash",
-                "type": "string"
-            }
-        ],
-        "name": "storeBallot",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    }
-] as const;
+export const BALLOT_REGISTRY_ABI =   [
+        {
+            "type": "constructor",
+            "inputs": [],
+            "stateMutability": "nonpayable"
+        },
+        {
+            "type": "function",
+            "name": "admin",
+            "inputs": [],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "address",
+                    "internalType": "address"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "ballots",
+            "inputs": [
+                {
+                    "name": "",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "hash",
+                    "type": "bytes32",
+                    "internalType": "bytes32"
+                },
+                {
+                    "name": "ipfsHash",
+                    "type": "string",
+                    "internalType": "string"
+                },
+                {
+                    "name": "timestamp",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "getBallot",
+            "inputs": [
+                {
+                    "name": "electionId",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                }
+            ],
+            "outputs": [
+                {
+                    "name": "",
+                    "type": "bytes32",
+                    "internalType": "bytes32"
+                },
+                {
+                    "name": "",
+                    "type": "string",
+                    "internalType": "string"
+                },
+                {
+                    "name": "",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                }
+            ],
+            "stateMutability": "view"
+        },
+        {
+            "type": "function",
+            "name": "storeBallot",
+            "inputs": [
+                {
+                    "name": "electionId",
+                    "type": "uint256",
+                    "internalType": "uint256"
+                },
+                {
+                    "name": "ballotHash",
+                    "type": "bytes32",
+                    "internalType": "bytes32"
+                },
+                {
+                    "name": "ipfsHash",
+                    "type": "string",
+                    "internalType": "string"
+                }
+            ],
+            "outputs": [],
+            "stateMutability": "nonpayable"
+        },
+        {
+            "type": "event",
+            "name": "BallotStored",
+            "inputs": [
+                {
+                    "name": "electionId",
+                    "type": "uint256",
+                    "indexed": true,
+                    "internalType": "uint256"
+                },
+                {
+                    "name": "hash",
+                    "type": "bytes32",
+                    "indexed": false,
+                    "internalType": "bytes32"
+                },
+                {
+                    "name": "ipfsHash",
+                    "type": "string",
+                    "indexed": false,
+                    "internalType": "string"
+                }
+            ],
+            "anonymous": false
+        }
+    ] as const;
