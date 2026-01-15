@@ -1,14 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import Navbar from './Navbar';
+import { AdminNavbar } from './AdminNavbar';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { BallotData } from '../lib/gemini';
 import { uploadJSONToIPFS } from '../lib/ipfs';
-import { Loader2, CheckCircle, ExternalLink, ShieldCheck, AlertCircle } from 'lucide-react';
+import {
+    Loader2,
+    CheckCircle,
+    ExternalLink,
+    ShieldCheck,
+    AlertCircle,
+    FileJson,
+    Upload,
+    ScanLine,
+    Hash,
+    Calendar,
+    Stamp,
+    UserCheck,
+    XCircle
+} from 'lucide-react';
 import { keccak256, toHex, getAddress } from 'viem';
 import { useWriteContract, useWaitForTransactionReceipt, useAccount, usePublicClient } from 'wagmi';
 import { BALLOT_REGISTRY_ABI } from '../abi/ballotRegistry';
 import { BALLOT_REGISTRY_ADDRESS } from '../config/contracts';
+import { CardContainer } from '@/components/Card-Container';
 
 const BallotScanner = () => {
     const [isUploading, setIsUploading] = useState(false);
@@ -182,9 +197,7 @@ const BallotScanner = () => {
             }));
 
             // 1. PRE-FLIGHT SIMULATION
-            // ... (rest of upload login)
             try {
-                // ... simulation code ...
                 console.log("DEBUG: Running pre-flight simulation...");
                 await publicClient?.simulateContract({
                     address: getAddress(BALLOT_REGISTRY_ADDRESS),
@@ -195,7 +208,6 @@ const BallotScanner = () => {
                 });
                 console.log("DEBUG: Simulation successful!");
             } catch (simErr: any) {
-                // ... error handling ...
                 console.error("DEBUG: Simulation failed:", simErr);
                 const reason = simErr.shortMessage || simErr.message || "Simulation failed";
 
@@ -214,12 +226,12 @@ const BallotScanner = () => {
             const ipfsUri = await uploadJSONToIPFS(finalBatch);
             setIpfsHash(ipfsUri);
 
-            // 2. Calculate batch hash from the same data being uploaded
+            // 3. Calculate batch hash from the same data being uploaded
             const jsonStr = JSON.stringify(finalBatch);
             const calculatedBatchHash = keccak256(toHex(jsonStr));
             setBatchHash(calculatedBatchHash);
 
-            // 3. Trigger Smart Contract Transaction
+            // 4. Trigger Smart Contract Transaction
             const hash = await writeContractAsync({
                 address: BALLOT_REGISTRY_ADDRESS as `0x${string}`,
                 abi: BALLOT_REGISTRY_ABI,
@@ -236,262 +248,327 @@ const BallotScanner = () => {
     };
 
     return (
-        <div className="min-h-screen bg-background pb-12">
-            <div className="container mx-auto px-4 pt-8 max-w-5xl">
-                <h1 className="text-3xl font-bold mb-2">Gov Admin: Ballot Scanner</h1>
-                <p className="text-muted-foreground mb-8">Upload verified ballot scans to digitize and secure them on IPFS.</p>
+        <div className="min-h-screen bg-[#f8fafc] pb-12">
+                                                                                                                                                                                                                                <AdminNavbar />
+{/* 
+            <div className="bg-[#1e293b] text-white py-12 mb-8 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2"></div>                                     
+                <div className="container mx-auto p                                                                                                                                                                                                     x-4 max-w-6xl relative z-10">
+                    <div className="flex items-center gap-4 mb-2">
+                        <span className="p-2 bg-white/10 rounded-lg">
+                            <ScanLine className="h-6 w-6 text-primary-foreground" />
+                        </span>
+                        <h1 className="text-3xl font-bold">Ballot Scanner & Digitizer</h1>
+                    </div>
+                    <p className="text-slate-300 max-w-2xl ml-12">
+                        Securely import, verify, and digitize physical ballot data.
+                        This tool creates an immutable record on the blockchain.
+                    </p>
+                </div>
+            </div> */}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="container mx-auto px-4 max-w-6xl mt-8">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 h-full">
+
                     {/* Left Column: Input Method */}
-                    <div className="space-y-6">
-                        <div className="space-y-4 animate-in fade-in duration-300">
-                            <div className="space-y-4">
-                                <div className="flex justify-between items-center">
-                                    <h2 className="text-xl font-semibold">Direct JSON Import</h2>
-                                    <label className="text-xs text-primary cursor-pointer hover:underline">
-                                        Upload JSON File
-                                        <input type="file" accept=".json" className="hidden" onChange={handleJsonFileChange} />
-                                    </label>
+                    <div className="lg:col-span-5 space-y-6">
+                        <CardContainer className="bg-white border-slate-200 shadow-sm h-full">
+                            <div className="flex justify-between items-center mb-4">
+                                <div className="flex items-center gap-2 text-slate-700">
+                                    <FileJson className="h-5 w-5 text-primary" />
+                                    <h2 className="font-semibold">Data Import</h2>
                                 </div>
+                                <label className="text-xs flex items-center gap-1 text-primary cursor-pointer hover:underline bg-primary/5 px-2 py-1 rounded border border-primary/20 transition-colors hover:bg-primary/10">
+                                    <Upload className="h-3 w-3" />
+                                    Upload JSON
+                                    <input type="file" accept=".json" className="hidden" onChange={handleJsonFileChange} />
+                                </label>
+                            </div>
+
+                            <div className="relative group">
                                 <textarea
-                                    className="w-full h-80 p-4 rounded-xl border border-border bg-card font-mono text-xs resize-none focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                    className="w-full h-[500px] p-4 rounded-xl border border-slate-200 bg-slate-50 font-mono text-xs resize-none focus:outline-none focus:ring-2 focus:ring-primary/50 text-slate-600 transition-all focus:bg-white focus:shadow-inner"
                                     placeholder={`{
   "srNo": "1",
-  "name": "John Doe",
-  "icon": "Lotus",
-  "party": "Example Party",
+  "name": "Candidate Name",
+  "icon": "Symbol",
+  "party": "Party Name",
   "isSigned": true,
   "isValid": true
 }`}
                                     value={jsonText}
                                     onChange={(e) => setJsonText(e.target.value)}
                                 />
-                                <Button
-                                    onClick={handleJsonImport}
-                                    disabled={!jsonText}
-                                    className="w-full font-semibold bg-secondary text-secondary-foreground hover:bg-muted border border-border"
-                                    variant="secondary"
-                                >
-                                    Import & Preview Data
-                                </Button>
+                                {jsonText && (
+                                    <div className="absolute top-2 right-2 text-[10px] text-slate-400 bg-white px-2 py-1 rounded border shadow-sm">
+                                        JSON Format
+                                    </div>
+                                )}
                             </div>
-                        </div>
+
+                            <Button
+                                onClick={handleJsonImport}
+                                disabled={!jsonText}
+                                className="w-full mt-4 font-semibold"
+                                variant={jsonText ? "default" : "secondary"}
+                            >
+                                <ScanLine className="w-4 h-4 mr-2" />
+                                Process & Verify Data
+                            </Button>
+                        </CardContainer>
 
                         {error && (
-                            <div className="p-4 bg-destructive/10 border border-destructive/20 text-destructive rounded-xl text-sm animate-in">
-                                {error}
+                            <div className="p-4 bg-red-50 border border-red-200 text-red-600 rounded-xl text-sm animate-in fade-in flex items-start gap-3 shadow-sm">
+                                <AlertCircle className="h-5 w-5 mt-0.5 shrink-0" />
+                                <div>
+                                    <p className="font-semibold">Validation Error</p>
+                                    <p className="opacity-90">{error}</p>
+                                </div>
                             </div>
                         )}
                     </div>
 
-                    {/* Right Column: Form & Actions */}
-                    <div className="space-y-6">
+                    {/* Right Column: Verification & Upload */}
+                    <div className="lg:col-span-7 space-y-6">
+
+                        {/* Control Panel */}
                         <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <label className="text-xs font-medium uppercase text-muted-foreground">Election ID</label>
+                            <CardContainer className="bg-white border-slate-200 py-3 px-4 shadow-sm">
+                                <label className="text-xs font-semibold uppercase text-slate-400 flex items-center gap-1 mb-1">
+                                    <Hash className="h-3 w-3" /> Election ID
+                                </label>
                                 <Input
-                                    placeholder="e.g. 101"
+                                    placeholder="Enter ID..."
                                     value={electionId}
                                     onChange={(e) => setElectionId(e.target.value)}
                                     type="number"
+                                    className="border-0 p-0 h-auto text-lg font-mono font-bold placeholder:text-slate-300 focus-visible:ring-0 text-slate-700"
                                 />
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-xs font-medium uppercase text-muted-foreground">Poll Date</label>
+                            </CardContainer>
+                            <CardContainer className="bg-white border-slate-200 py-3 px-4 shadow-sm">
+                                <label className="text-xs font-semibold uppercase text-slate-400 flex items-center gap-1 mb-1">
+                                    <Calendar className="h-3 w-3" /> Poll Date
+                                </label>
                                 <Input
                                     type="date"
                                     value={pollDate}
                                     onChange={(e) => setPollDate(e.target.value)}
-                                    className="bg-background"
+                                    className="border-0 p-0 h-auto text-sm font-medium focus-visible:ring-0 text-slate-700"
                                 />
-                            </div>
+                            </CardContainer>
                         </div>
 
                         {data ? (
-                            <div className="bg-card border border-border rounded-xl p-6 shadow-sm space-y-4 animate-in fade-in slide-in-from-bottom-4">
-                                <div className="flex justify-between items-center mb-2">
-                                    <h3 className="font-semibold text-lg flex items-center gap-2 text-foreground">
-                                        <CheckCircle className="h-5 w-5 text-green-500" />
-                                        Review Extracted Data
-                                    </h3>
-                                    {batchData.length > 1 && (
-                                        <div className="flex items-center gap-2">
-                                            <Button variant="ghost" size="sm" onClick={prevBallot} disabled={currentIndex === 0}>
-                                                &larr;
-                                            </Button>
-                                            <span className="text-xs font-mono">{currentIndex + 1} / {batchData.length}</span>
-                                            <Button variant="ghost" size="sm" onClick={nextBallot} disabled={currentIndex === batchData.length - 1}>
-                                                &rarr;
-                                            </Button>
+                            <div className="space-y-6">
+                                {/* Digital Ballot Card */}
+                                <div className="bg-white border border-slate-200 rounded-2xl shadow-lg overflow-hidden relative animate-in fade-in slide-in-from-bottom-2">
+                                    {/* Header Pattern */}
+                                    <div className="h-2 bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500"></div>
+
+                                    <div className="p-6">
+                                        <div className="flex justify-between items-start mb-6">
+                                            <div>
+                                                <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                                                    Ballot Verification
+                                                    {data.isValid && (
+                                                        <span className="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] rounded-full uppercase tracking-wide border border-green-200">
+                                                            Valid
+                                                        </span>
+                                                    )}
+                                                </h3>
+                                                <p className="text-xs text-slate-500">Review the digitized data before blockchain submission</p>
+                                            </div>
+
+                                            {batchData.length > 1 && (
+                                                <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg">
+                                                    <Button variant="ghost" size="sm" onClick={prevBallot} disabled={currentIndex === 0} className="h-7 w-7 p-0">
+                                                        &larr;
+                                                    </Button>
+                                                    <span className="text-xs font-mono font-medium px-2 text-slate-600">
+                                                        {currentIndex + 1} / {batchData.length}
+                                                    </span>
+                                                    <Button variant="ghost" size="sm" onClick={nextBallot} disabled={currentIndex === batchData.length - 1} className="h-7 w-7 p-0">
+                                                        &rarr;
+                                                    </Button>
+                                                </div>
+                                            )}
                                         </div>
-                                    )}
+
+                                        <div className="grid grid-cols-12 gap-6">
+                                            {/* Left: SR No */}
+                                            <div className="col-span-3">
+                                                <label className="text-xs font-semibold uppercase text-slate-400 mb-1 block">Sr. No</label>
+                                                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-center justify-center h-24">
+                                                    <input
+                                                        value={data.srNo}
+                                                        onChange={(e) => handleFieldChange('srNo', e.target.value)}
+                                                        className="text-3xl font-bold text-center bg-transparent w-full focus:outline-none text-slate-800"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {/* Right: Candidate Details */}
+                                            <div className="col-span-9 space-y-4">
+                                                <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
+                                                    <label className="text-xs font-semibold uppercase text-slate-400 mb-1 block">Candidate Name</label>
+                                                    <input
+                                                        value={data.name}
+                                                        onChange={(e) => handleFieldChange('name', e.target.value)}
+                                                        className="text-xl font-bold bg-transparent w-full focus:outline-none text-slate-800 border-b border-transparent focus:border-primary/50 transition-colors"
+                                                    />
+                                                </div>
+
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <div className="bg-slate-50 border border-slate-200 p-3 rounded-xl">
+                                                        <label className="text-[10px] font-semibold uppercase text-slate-400 mb-1 block">Party Name</label>
+                                                        <input
+                                                            value={data.party || ''}
+                                                            onChange={(e) => handleFieldChange('party', e.target.value)}
+                                                            className="text-sm font-medium bg-transparent w-full focus:outline-none text-slate-700"
+                                                        />
+                                                    </div>
+                                                    <div className="bg-slate-50 border border-slate-200 p-3 rounded-xl">
+                                                        <label className="text-[10px] font-semibold uppercase text-slate-400 mb-1 block">Party Symbol</label>
+                                                        <input
+                                                            value={data.icon}
+                                                            onChange={(e) => handleFieldChange('icon', e.target.value)}
+                                                            className="text-sm font-medium bg-transparent w-full focus:outline-none text-slate-700"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Status Checks */}
+                                        <div className="grid grid-cols-2 gap-4 mt-6">
+                                            <label className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${data.isSigned ? 'border-blue-500 bg-blue-50/50' : 'border-slate-200'}`}>
+                                                <div className={`w-5 h-5 rounded flex items-center justify-center border ${data.isSigned ? 'bg-blue-500 border-blue-500 text-white' : 'border-slate-300 bg-white'}`}>
+                                                    {data.isSigned && <Stamp className="w-3 h-3" />}
+                                                </div>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={data.isSigned}
+                                                    onChange={(e) => handleFieldChange('isSigned', e.target.checked)}
+                                                    className="hidden"
+                                                />
+                                                <span className={`text-sm font-medium ${data.isSigned ? 'text-blue-700' : 'text-slate-500'}`}>
+                                                    Officially Signed
+                                                </span>
+                                            </label>
+
+                                            <label className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${data.isValid ? 'border-green-500 bg-green-50/50' : 'border-slate-200'}`}>
+                                                <div className={`w-5 h-5 rounded flex items-center justify-center border ${data.isValid ? 'bg-green-500 border-green-500 text-white' : 'border-slate-300 bg-white'}`}>
+                                                    {data.isValid && <ShieldCheck className="w-3 h-3" />}
+                                                </div>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={data.isValid}
+                                                    onChange={(e) => handleFieldChange('isValid', e.target.checked)}
+                                                    className="hidden"
+                                                />
+                                                <span className={`text-sm font-medium ${data.isValid ? 'text-green-700' : 'text-slate-500'}`}>
+                                                    Vote Valid
+                                                </span>
+                                            </label>
+                                        </div>
+
+                                        {/* Hash Display */}
+                                        {computedBallotHash && (
+                                            <div className="mt-6 p-3 bg-slate-900 rounded-lg text-xs font-mono group relative overflow-hidden">
+                                                <div className="absolute top-0 right-0 p-1 opacity-20 group-hover:opacity-100 transition-opacity">
+                                                    <Hash className="w-4 h-4 text-white" />
+                                                </div>
+                                                <span className="text-slate-400 block mb-1 text-[10px] uppercase tracking-wider">Generated Ballot Hash</span>
+                                                <span className="text-green-400 break-all">{computedBallotHash}</span>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Action Footer */}
+                                    <div className="bg-slate-50 p-4 border-t border-slate-200 flex items-center justify-between">
+                                        <div className="text-xs text-slate-500">
+                                            Confidence Score: <span className="font-bold text-slate-700">{(data.confidence * 100).toFixed(0)}%</span>
+                                        </div>
+                                        <Button
+                                            onClick={handleUpload}
+                                            disabled={isUploading || isWriting || isConfirming || isConfirmed}
+                                            className="px-6 font-semibold shadow-md hover:shadow-lg transition-all"
+                                            size="lg"
+                                        >
+                                            {isUploading ? (
+                                                <>
+                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                    Uploading...
+                                                </>
+                                            ) : isWriting ? (
+                                                <>
+                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                    Sign Wallet...
+                                                </>
+                                            ) : isConfirming ? (
+                                                <>
+                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                    Confirming...
+                                                </>
+                                            ) : isConfirmed ? (
+                                                <>
+                                                    <ShieldCheck className="mr-2 h-4 w-4" />
+                                                    Secured
+                                                </>
+                                            ) : 'Push to Blockchain'}
+                                        </Button>
+                                    </div>
                                 </div>
-
-                                <div className="space-y-3">
-                                    <div className="grid grid-cols-4 gap-2">
-                                        <div className="col-span-1 space-y-1">
-                                            <label className="text-xs font-medium uppercase text-muted-foreground">Sr. No</label>
-                                            <Input
-                                                value={data.srNo}
-                                                onChange={(e) => handleFieldChange('srNo', e.target.value)}
-                                            />
-                                        </div>
-                                        <div className="col-span-3 space-y-1">
-                                            <label className="text-xs font-medium uppercase text-muted-foreground">Candidate Name</label>
-                                            <Input
-                                                value={data.name}
-                                                onChange={(e) => handleFieldChange('name', e.target.value)}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-2">
-                                        <div className="space-y-1">
-                                            <label className="text-xs font-medium uppercase text-muted-foreground">Party Icon</label>
-                                            <Input
-                                                value={data.icon}
-                                                onChange={(e) => handleFieldChange('icon', e.target.value)}
-                                            />
-                                        </div>
-                                        <div className="space-y-1">
-                                            <label className="text-xs font-medium uppercase text-muted-foreground">Party Name</label>
-                                            <Input
-                                                value={data.party || ''}
-                                                onChange={(e) => handleFieldChange('party', e.target.value)}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="flex items-center gap-2 border border-border p-3 rounded bg-card">
-                                            <input
-                                                type="checkbox"
-                                                checked={data.isSigned}
-                                                onChange={(e) => handleFieldChange('isSigned', e.target.checked)}
-                                                className="h-4 w-4 accent-primary"
-                                            />
-                                            <span className="text-sm text-foreground">Signed?</span>
-                                        </div>
-                                        <div className="flex items-center gap-2 border border-border p-3 rounded bg-card">
-                                            <input
-                                                type="checkbox"
-                                                checked={data.isValid}
-                                                onChange={(e) => handleFieldChange('isValid', e.target.checked)}
-                                                className="h-4 w-4 accent-primary"
-                                            />
-                                            <span className="text-sm text-foreground">Valid?</span>
-                                        </div>
-                                    </div>
-
-                                    <div className="p-3 bg-muted rounded text-xs font-mono text-foreground">
-                                        Confidence: {(data.confidence * 100).toFixed(1)}% <br />
-                                        Notes: {data.notes || 'None'}
-                                    </div>
-
-                                    {computedBallotHash && (
-                                        <div className="p-3 bg-primary/10 border border-primary/20 rounded text-xs break-all">
-                                            <span className="font-semibold text-primary block mb-1">Generated Ballot Hash (bytes32):</span>
-                                            <span className="font-mono text-foreground">{computedBallotHash}</span>
-                                            <p className="text-[10px] text-muted-foreground mt-1">Keccak256(name + srNo)</p>
-                                        </div>
-                                    )}
-                                </div>
-
-                                <Button
-                                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-semibold"
-                                    onClick={handleUpload}
-                                    disabled={isUploading || isWriting || isConfirming || isConfirmed}
-                                >
-                                    {isUploading ? (
-                                        <>
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                            Uploading to IPFS...
-                                        </>
-                                    ) : isWriting ? (
-                                        <>
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                            Confirm in Wallet...
-                                        </>
-                                    ) : isConfirming ? (
-                                        <>
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                            Verifying On-Chain...
-                                        </>
-                                    ) : isConfirmed ? (
-                                        <>
-                                            <ShieldCheck className="mr-2 h-4 w-4" />
-                                            Success!
-                                        </>
-                                    ) : 'Push to Blockchain'}
-                                </Button>
                             </div>
                         ) : (
-                            <div className="h-full flex items-center justify-center text-muted-foreground text-sm border-2 border-dashed border-border rounded-xl p-8 bg-card">
-                                Import JSON data to verify here
+                            <div className="h-[400px] flex flex-col items-center justify-center text-slate-400 border-2 border-dashed border-slate-200 rounded-2xl bg-white/50">
+                                <ScanLine className="h-12 w-12 mb-4 opacity-20" />
+                                <p className="font-medium">Waiting for data...</p>
+                                <p className="text-sm">Import JSON from the left panel to begin verification</p>
                             </div>
                         )}
 
-                        {isConfirmed && (
-                            <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
-                                <ShieldCheck className="h-5 w-5 text-green-500 mt-0.5" />
-                                <div className="space-y-1">
-                                    <p className="text-sm font-semibold text-green-600">Ballot Batch Secured</p>
-                                    <p className="text-xs text-muted-foreground">The batch hash and IPFS metadata are now permanently recorded on the blockchain.</p>
-                                    <a
-                                        href={`https://sepolia.etherscan.io/tx/${txHash}`}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="text-xs text-primary underline flex items-center gap-1 mt-2"
-                                    >
-                                        View Transaction <ExternalLink className="h-3 w-3" />
-                                    </a>
+                        {/* Success Receipt */}
+                        {isConfirmed && ipfsHash && (
+                            <div className="bg-white border border-green-200 rounded-2xl p-6 shadow-sm animate-in fade-in slide-in-from-top-4 relative overflow-hidden">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-green-50 rounded-bl-full -mr-8 -mt-8 z-0"></div>
+                                <div className="relative z-10">
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <div className="p-2 bg-green-100 rounded-full text-green-600">
+                                            <ShieldCheck className="h-6 w-6" />
+                                        </div>
+                                        <div>
+                                            <h3 className="font-bold text-lg text-slate-800">Ballot Batch Secured</h3>
+                                            <p className="text-xs text-slate-500">Immutable record created on blockchain</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4 text-sm mb-4">
+                                        <div className="bg-slate-50 p-3 rounded-lg">
+                                            <span className="text-xs text-slate-400 uppercase block mb-1">Items</span>
+                                            <span className="font-mono font-medium text-slate-700">{batchData.length || 1} Ballots</span>
+                                        </div>
+                                        <div className="bg-slate-50 p-3 rounded-lg">
+                                            <span className="text-xs text-slate-400 uppercase block mb-1">Batch Hash</span>
+                                            <span className="font-mono font-medium text-slate-700 truncate block">{batchHash?.slice(0, 10)}...</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex gap-3">
+                                        <a href={`https://sepolia.etherscan.io/tx/${txHash}`} target="_blank" rel="noreferrer" className="flex-1">
+                                            <Button variant="outline" className="w-full text-xs" size="sm">
+                                                <ExternalLink className="w-3 h-3 mr-2" />
+                                                View Transaction
+                                            </Button>
+                                        </a>
+                                        <a href={ipfsHash.replace('ipfs://', 'https://gateway.pinata.cloud/ipfs/')} target="_blank" rel="noreferrer" className="flex-1">
+                                            <Button variant="outline" className="w-full text-xs" size="sm">
+                                                <ExternalLink className="w-3 h-3 mr-2" />
+                                                View IPFS Metadata
+                                            </Button>
+                                        </a>
+                                    </div>
                                 </div>
-                            </div>
-                        )}
-
-                        {txError && (
-                            <div className="p-4 bg-destructive/10 border border-destructive/20 text-destructive rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
-                                <AlertCircle className="h-5 w-5 mt-0.5" />
-                                <div className="space-y-1">
-                                    <p className="text-sm font-semibold">Transaction Failed</p>
-                                    <p className="text-xs opacity-80">{(txError as any)?.shortMessage || txError.message}</p>
-                                </div>
-                            </div>
-                        )}
-
-                        {ipfsHash && isConfirmed && (
-                            <div className="bg-primary/10 border border-primary/20 text-foreground p-4 rounded-xl break-all space-y-4">
-                                <h3 className="font-semibold text-lg text-primary">Metadata Details</h3>
-
-                                <div className="space-y-1">
-                                    <p className="text-xs font-bold uppercase text-muted-foreground">Election ID (uint256)</p>
-                                    <p className="font-mono bg-background p-2 rounded text-foreground">{electionId}</p>
-                                </div>
-
-                                <div className="space-y-1">
-                                    <p className="text-xs font-bold uppercase text-muted-foreground">Poll Date</p>
-                                    <p className="font-mono bg-background p-2 rounded text-foreground">{pollDate}</p>
-                                </div>
-
-                                <div className="space-y-1">
-                                    <p className="text-xs font-bold uppercase text-muted-foreground">Batch Hash (bytes32)</p>
-                                    <p className="font-mono bg-background p-2 rounded text-xs text-foreground">{batchHash}</p>
-                                    <p className="text-[10px] text-muted-foreground italic">Keccak256 of the whole JSON array</p>
-                                </div>
-
-                                <div className="space-y-1">
-                                    <p className="text-xs font-bold uppercase text-muted-foreground">IPFS Hash (string)</p>
-                                    <p className="font-mono bg-background p-2 rounded text-xs text-foreground">{ipfsHash}</p>
-                                </div>
-
-                                <a
-                                    href={ipfsHash.replace('ipfs://', 'https://gateway.pinata.cloud/ipfs/')}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="text-xs text-primary underline block mt-2 text-right hover:text-primary/80"
-                                >
-                                    View Metadata on Gateway
-                                </a>
                             </div>
                         )}
                     </div>
