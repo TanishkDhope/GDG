@@ -72,32 +72,61 @@ export default function VerificationPage() {
   }
 
   // Keep the same check (only require faceImage to be set)
-  const handleFaceVerification =async (e: React.FormEvent) => {
+  const handleFaceVerification = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
 
     if (!faceImage) {
-      alert("Please allow camera access so we can capture your face")
+      setError("Please allow camera access so we can capture your face")
       return
     }
-    // stop camera when proceeding
-    stopCamera()
+
     setLoading(true)
-    console.log("Sending face image for verification:", { voter_id: voterId, image: faceImage })
-    const response= await fetch("http://localhost:5000/verify", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        voter_id: voterId,
-        image: faceImage,
-      }),
-    })
-    console.log(response)
-    setTimeout(() => {
+    
+    try {
+      // Step 1: Face verification with Python backend
+      console.log("Sending face image for verification:", { voter_id: voterId })
+      const faceResponse = await fetch("http://localhost:5000/verify", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          voter_id: voterId,
+          image: faceImage,
+        }),
+      })
+
+      const faceData = await faceResponse.json()
+      console.log("Face verification response:", faceData)
+
+      if (!faceData.verified) {
+        stopCamera()
+        setError(faceData.message || "Face verification failed. Please try again.")
+        alert(`Face verification failed: ${faceData.message || "Face does not match"}`)
+        return
+      }
+
+      // Step 2: If face verified, send OTP
+      alert(`Face verified successfully! Similarity: ${(faceData.similarity * 100).toFixed(1)}%`)
+      
+      const otpResponse = await axios.post(`http://localhost:8000/api/v1/voters/send-otp`, {
+        voterID: voterId,
+      })
+
+      if (otpResponse.data.success) {
+        stopCamera()
+        alert("OTP sent to your registered mobile number!")
+        setCurrentStep("otp")
+      }
+    } catch (err: any) {
+      console.error("Face verification error:", err)
+      stopCamera()
+      setError(err.response?.data?.message || err.message || "Face verification failed. Please try again.")
+      alert("Face verification failed. Please try again.")
+    } finally {
       setLoading(false)
-    })
+    }
   }
 
   const handleOtpSubmit = async (e: React.FormEvent) => {
