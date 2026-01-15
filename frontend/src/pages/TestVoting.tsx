@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -8,9 +8,16 @@ import * as snarkjs from "snarkjs";
 import { useWriteContract, useWaitForTransactionReceipt, useAccount } from "wagmi";
 import { ZK_VOTING_ABI } from '@/abi/ZKVoting';
 import { ZK_VOTING_ADDRESS } from '@/config/contracts';
+import { v4 as uuidv4 } from 'uuid';
 
+import {
+  cacheVote,
+  getCachedVotes,
+  markVoteSynced,
+} from '@/lib/voteCache';
 
 const TestVoting = () => {
+    const [isOffline, setIsOffline] = useState(!navigator.onLine);
     const [isGenerating, setIsGenerating] = useState(false);
     const [result, setResult] = useState<any>(null);
     const [error, setError] = useState<string | null>(null);
@@ -18,10 +25,14 @@ const TestVoting = () => {
     const [candidateId, setCandidateId] = useState<string>('1');
     const [identitySecret, setIdentitySecret] = useState<string>('');
     const [txHash, setTxHash] = useState<`0x${string}` | undefined>(undefined);
+<<<<<<< HEAD
     const [merkleRootTxHash, setMerkleRootTxHash] = useState<`0x${string}` | undefined>(undefined);
     const [isUpdatingMerkleRoot, setIsUpdatingMerkleRoot] = useState(false);
 
     const { address } = useAccount();
+=======
+    
+>>>>>>> 8264eca6828b6053dcc270e01410cd032d321d1b
     const { writeContractAsync, isPending: isVoting } = useWriteContract();
     const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
         hash: txHash,
@@ -31,6 +42,57 @@ const TestVoting = () => {
         hash: merkleRootTxHash,
         query: { enabled: !!merkleRootTxHash }
     });
+
+    // Handle online/offline status
+    useEffect(() => {
+        const updateStatus = () => setIsOffline(!navigator.onLine);
+        
+        // Set initial status
+        setIsOffline(!navigator.onLine);
+        
+        // Add event listeners
+        window.addEventListener('online', updateStatus);
+        window.addEventListener('offline', updateStatus);
+
+        return () => {
+            window.removeEventListener('online', updateStatus);
+            window.removeEventListener('offline', updateStatus);
+        };
+    }, []);
+
+    const syncCachedVotes = async () => {
+        const cachedVotes = await getCachedVotes();
+
+        for (const vote of cachedVotes) {
+            if (vote.synced) continue;
+
+            try {
+                const txHash = await writeContractAsync({
+                    address: ZK_VOTING_ADDRESS as `0x${string}`,
+                    abi: ZK_VOTING_ABI,
+                    functionName: 'vote',
+                    args: [
+                        vote.proofData.a,
+                        vote.proofData.b,
+                        vote.proofData.c,
+                        vote.proofData.input,
+                        BigInt(vote.candidateId),
+                    ],
+                });
+
+                await markVoteSynced(vote.id);
+                console.log('Vote synced:', txHash);
+            } catch (err) {
+                console.error('Failed to sync vote:', vote.id, err);
+            }
+        }
+    };
+
+    useEffect(() => {
+        if (!isOffline) {
+            syncCachedVotes();
+        }
+    }, [isOffline]);
 
     const handleGenerateInput = async () => {
         if (!identitySecret || identitySecret.trim() === '') {
@@ -126,6 +188,16 @@ const TestVoting = () => {
 
             // Store proof data for voting
             setProofData({ a, b, c, input });
+            
+            await cacheVote({
+                id: uuidv4(),
+                timestamp: Date.now(),
+                candidateId,
+                electionId: data.circuitInput.election_id,
+                proofData: { a, b, c, input },
+                synced: false,
+            });
+
             console.log('Proof data ready for voting:', { a, b, c, input });
 
         } catch (err: any) {
@@ -159,7 +231,6 @@ const TestVoting = () => {
         }
     };
 
-
     return (
         <div className="min-h-screen flex flex-col bg-background">
             <Navbar />
@@ -184,6 +255,13 @@ const TestVoting = () => {
                 <section className="py-16 md:py-24">
                     <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
                         <div className="space-y-6">
+                            {/* Offline Status Indicator */}
+                            {isOffline && (
+                                <div className="p-3 mb-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg text-sm text-yellow-700">
+                                    You are offline. Your vote will be securely cached and synced later.
+                                </div>
+                            )}
+
                             {/* Action Button */}
                             <div className="bg-card border border-border rounded-xl p-8 space-y-6">
                                 <div className="text-center">

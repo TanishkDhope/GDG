@@ -14,6 +14,8 @@ import SuccessPage from "./pages/SuccessPage";
 import Test from "./components/Test";
 import BallotScanner from "./components/BallotScanner";
 import TestVoting from "./pages/TestVoting";
+import AdminLogin from "./pages/AdminLogin.jsx";
+import ProtectedRoute from "./routes/ProtectedRoute";
 
 function App() {
   return (
@@ -24,13 +26,28 @@ function App() {
             <Route path="/candidates" element={<CandidatesPage />} />
             <Route path="/results" element={<ResultsPage />} />
             <Route path="/help" element={<HelpPage />} />
-            <Route path="/admin" element={<AdminPage />} />
+            <Route 
+              path="/admin" 
+              element={
+                <ProtectedRoute>
+                  <AdminPage />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/ballot" 
+              element={
+                <ProtectedRoute>
+                  <BallotScanner />
+                </ProtectedRoute>
+              } 
+            />
             <Route path="/verify" element={<VerificationPage />} />
             <Route path="/voting" element={<VotingPage />} />
             <Route path="/success" element={<SuccessPage />} />
             {/* <Route path="/test" element={<Test />} /> */}
-            <Route path="/ballot" element={<BallotScanner />} />
             <Route path="/testVoting" element={<TestVoting/>}/>
+            <Route path="/adminLogin" element={<AdminLogin />} />
           </Routes>
       </Providers>
     </BrowserRouter>
